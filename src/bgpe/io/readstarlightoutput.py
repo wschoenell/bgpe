@@ -32,32 +32,32 @@ def ReadStarlightFile(filename, just_spec=False):
         StarlightOut['N_base']        =    np.int(shlex.split(data[9])[0])
         StarlightOut['N_YAV_components']  =    np.int(shlex.split(data[10])[0])
         StarlightOut['iFitPowerLaw']      =    np.int(shlex.split(data[11])[0])
-        StarlightOut['alpha_PowerLaw']    =  np.float(shlex.split(data[12])[0])
+        StarlightOut['alpha_PowerLaw']    =  np.float32(shlex.split(data[12])[0])
         StarlightOut['red_law_option']    = np.str(shlex.split(data[13])[0])
-        StarlightOut['q_norm']            =  np.float(shlex.split(data[14])[0])
+        StarlightOut['q_norm']            =  np.float32(shlex.split(data[14])[0])
 
         ## (Re)Sampling Parameters
 
-        StarlightOut['l_ini']           = np.float(shlex.split(data[17])[0])
-        StarlightOut['l_fin']           = np.float(shlex.split(data[18])[0])
-        StarlightOut['dl']              = np.float(shlex.split(data[19])[0])
+        StarlightOut['l_ini']           = np.float32(shlex.split(data[17])[0])
+        StarlightOut['l_fin']           = np.float32(shlex.split(data[18])[0])
+        StarlightOut['dl']              = np.float32(shlex.split(data[19])[0])
 
         ## Normalization info
 
-        StarlightOut['l_norm']          = np.float(shlex.split(data[22])[0])
-        StarlightOut['llow_norm']       = np.float(shlex.split(data[23])[0])
-        StarlightOut['lupp_norm']       = np.float(shlex.split(data[24])[0])
-        StarlightOut['fobs_norm']       = np.float(shlex.split(data[25])[0])
+        StarlightOut['l_norm']          = np.float32(shlex.split(data[22])[0])
+        StarlightOut['llow_norm']       = np.float32(shlex.split(data[23])[0])
+        StarlightOut['lupp_norm']       = np.float32(shlex.split(data[24])[0])
+        StarlightOut['fobs_norm']       = np.float32(shlex.split(data[25])[0])
 
         ## S/N
 
-        StarlightOut['llow_SN']         = np.float(shlex.split(data[28])[0])
-        StarlightOut['lupp_SN']         = np.float(shlex.split(data[29])[0])
-        StarlightOut['SN_snwin']        = np.float(shlex.split(data[30])[0])
-        StarlightOut['SN_normwin']      = np.float(shlex.split(data[31])[0])
-        StarlightOut['SNerr_snwin']     = np.float(shlex.split(data[32])[0])
-        StarlightOut['SNerr_normwin']   = np.float(shlex.split(data[33])[0])
-        StarlightOut['fscale_chi2']     = np.float(shlex.split(data[34])[0])
+        StarlightOut['llow_SN']         = np.float32(shlex.split(data[28])[0])
+        StarlightOut['lupp_SN']         = np.float32(shlex.split(data[29])[0])
+        StarlightOut['SN_snwin']        = np.float32(shlex.split(data[30])[0])
+        StarlightOut['SN_normwin']      = np.float32(shlex.split(data[31])[0])
+        StarlightOut['SNerr_snwin']     = np.float32(shlex.split(data[32])[0])
+        StarlightOut['SNerr_normwin']   = np.float32(shlex.split(data[33])[0])
+        StarlightOut['fscale_chi2']     = np.float32(shlex.split(data[34])[0])
 
         ## etc...
 
@@ -71,18 +71,18 @@ def ReadStarlightFile(filename, just_spec=False):
 
         ## Synthesis Results - Best model ##
 
-        StarlightOut['chi2']            = np.float(shlex.split(data[49])[0])
-        StarlightOut['adev']            = np.float(shlex.split(data[50])[0])
+        StarlightOut['chi2']            = np.float32(shlex.split(data[49])[0])
+        StarlightOut['adev']            = np.float32(shlex.split(data[50])[0])
 
-        StarlightOut['sum_x']           = np.float(shlex.split(data[52])[0])
-        StarlightOut['Flux_tot']        = np.float(shlex.split(data[53])[0])
-        StarlightOut['Mini_tot']        = np.float(shlex.split(data[54])[0])
-        StarlightOut['Mcor_tot']        = np.float(shlex.split(data[55])[0])
+        StarlightOut['sum_x']           = np.float32(shlex.split(data[52])[0])
+        StarlightOut['Flux_tot']        = np.float32(shlex.split(data[53])[0])
+        StarlightOut['Mini_tot']        = np.float32(shlex.split(data[54])[0])
+        StarlightOut['Mcor_tot']        = np.float32(shlex.split(data[55])[0])
 
-        StarlightOut['v_0']             = np.float(shlex.split(data[57])[0])
-        StarlightOut['v_d']             = np.float(shlex.split(data[58])[0])
-        StarlightOut['A_V']             = np.float(shlex.split(data[59])[0])
-        StarlightOut['YA_V']            = np.float(shlex.split(data[60])[0])
+        StarlightOut['v_0']             = np.float32(shlex.split(data[57])[0])
+        StarlightOut['v_d']             = np.float32(shlex.split(data[58])[0])
+        StarlightOut['A_V']             = np.float32(shlex.split(data[59])[0])
+        StarlightOut['YA_V']            = np.float32(shlex.split(data[60])[0])
 
 
         # Read/define x, mu_ini, mu_cor, age_base, Z_base & YAV_flag arrays.
@@ -90,7 +90,7 @@ def ReadStarlightFile(filename, just_spec=False):
         pop = []
         for i in range(63,_nlast+1):
             #popx 2 popmu_ini 3 popmu_cor 4 popage_base 5 popZ_base 6  popYAV_flag 8 popMstars 9
-            pop.append([np.float(shlex.split(data[i])[1]),np.float(shlex.split(data[i])[2]),np.float(shlex.split(data[i])[3]),np.float(shlex.split(data[i])[4]),np.float(shlex.split(data[i])[5]),np.int(shlex.split(data[i])[7]),np.float(shlex.split(data[i])[8])])
+            pop.append([np.float32(shlex.split(data[i])[1]),np.float32(shlex.split(data[i])[2]),np.float32(shlex.split(data[i])[3]),np.float32(shlex.split(data[i])[4]),np.float32(shlex.split(data[i])[5]),np.int(shlex.split(data[i])[7]),np.float32(shlex.split(data[i])[8])])
         pop = np.transpose(pop)
 
         # Renormalize x to 100% sum!!
@@ -109,7 +109,7 @@ def ReadStarlightFile(filename, just_spec=False):
     else:
         #print 'Warning: just_spec set to TRUE! Reading only the spectra.'
         StarlightOut['N_base']        =    np.int(shlex.split(data[9])[0])
-        StarlightOut['fobs_norm']   = np.float(shlex.split(data[25])[0])
+        StarlightOut['fobs_norm']   = np.float32(shlex.split(data[25])[0])
 
         
     # Read spectra (l_obs, f_obs, f_syn & f_wei)
@@ -120,7 +120,7 @@ def ReadStarlightFile(filename, just_spec=False):
     #iaux3 = iaux1 + StarlightOut['Nl_obs']
 
     
-    dt = np.dtype([('wl', 'float64'), ('flux_obs', 'float64'), ('flux_syn', 'float64'), ('wei', 'float64'), ('Best_f_SSP', 'float64')])
+    dt = np.dtype([('wl', 'float32'), ('flux_obs', 'float32'), ('flux_syn', 'float32'), ('wei', 'float32'), ('Best_f_SSP', 'float32')])
     out_spec = np.loadtxt(filename, dtype=dt, skiprows=iaux2)
     
     StarlightOut['out_spec'] = out_spec
