@@ -20,7 +20,7 @@ Created on Feb 23, 2012
 
 # metadata definition used by setup.py and others
 
-_bgpe_version_          = "0.2"
+_bgpe_version_          = "0.1"
 _bgpe_name_             = "bgpe"
 _bgpe_requires_         = ""
 _bgpe_provides_         = "bgpe-core"
