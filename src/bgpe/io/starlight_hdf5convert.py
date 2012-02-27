@@ -11,40 +11,47 @@ import numpy as np
 import datetime
 import h5py
 
+from bgpe.core.exceptions import HDF5dbException
 from bgpe.core.version import _bgpe_name_, _bgpe_version_
 from bgpe.io.readstarlightoutput import ReadStarlightFile
 from bgpe.io.readsdssinput import Read7xt
 
 
 class starlightout2hdf5(object):
-    def __init__(self, sdss_txt_dir, starlight_txt_dir, db_file):
-        self.compression = 9
+    def __init__(self, sdss_txt_dir, starlight_txt_dir, db_file, compression=9):
+        self.compression = compression
         self.db_file = db_file
         self.sdss_txt_dir = sdss_txt_dir
         self.starlight_txt_dir = starlight_txt_dir
         
     def readstarlightoutput(self, starlight_file):
-        self.starlight_output = ReadStarlightFile(self.starlight_txt_dir+starlight_file)
+        try:
+            self.starlight_output = ReadStarlightFile(self.starlight_txt_dir+starlight_file)
+        except:
+            raise HDF5dbException('Could not read Starlight file %s' % starlight_file)
         self.starlight_file = starlight_file 
         
         
     def readsdssinput(self, sdss_file):
-        self.sdss_input = Read7xt(self.sdss_txt_dir+sdss_file)
+        try:
+            self.sdss_input = Read7xt(self.sdss_txt_dir+sdss_file)
+        except:
+            raise HDF5dbException('Could not read SDSS file %s' % sdss_file)
         self.sdss_file = sdss_file 
 
     
-    def createdbfile(self, db_file, dr, base):
+    def createslihgtdbfile(self, db_file, dr, base):
         '''
-            Creates a new db_file with the dataset structure:    
-            /data_release/input/plate.mjd.fiberID
-            /data_release/output/base/plate.mjd.fiberID
+            Creates a new starlight db_file with the dataset structure:    
+                /data_release/input/plate.mjd.fiberID
+                /data_release/output/base/plate.mjd.fiberID
         '''
-        #Try to create a new HDF5 file:
+        
+        #Create a new HDF5 file:
         try:
             self.db = h5py.File(db_file, 'w')
         except:
-            print "Unexpected error:", sys.exc_info()[0]
-            raise # Deal with this exception
+            raise HDF5dbException('Could not create HDF5 file %s' % db_file)
         
         self.dr = dr
         self.base = base
@@ -59,7 +66,7 @@ class starlightout2hdf5(object):
         self.db.create_group('/'+np.str(dr)+'/output/'+np.str(base)+'/')  #Input
         
         
-    def savetohdf5file(self):
+    def savetoslightdb(self):
         '''
             Save content of both input and the output files in an HDF5 file (database)
         '''
@@ -71,22 +78,23 @@ class starlightout2hdf5(object):
             self.dataset = self.db.create_dataset( ('/%s/input/%s.%s.%s' % (self.dr, f_[0], f_[1], f_[2])),
                                                   data = self.sdss_input, compression=self.compression)
         except:
-            print "Unexpected error:", sys.exc_info()[0]
-            raise # Deal with this exception
+            raise HDF5dbException('Could not create field to %s.%s.%s. Duplicate entries on the input?'
+                            % ( f_[0], f_[1], f_[2] ) )
         
         # Save Starlight .txt outputfile:
         try:
             self.dataset = self.db.create_dataset( ('/%s/output/%s/%s.%s.%s' % (self.dr, self.base, f_[0], f_[1], f_[2])),
                                                   data = self.starlight_output['out_spec'], compression=self.compression)
         except:
-            print "Unexpected error:", sys.exc_info()[0]
-            raise # Deal with this exception
+            raise HDF5dbException('Could not create field to %s.%s.%s. Duplicate entries on the input?'
+                            % ( f_[0], f_[1], f_[2] ) )
         
+        # Save the Starlight Output properties (A_V, v0, vd, ...) as dataset attributes
         for key in self.starlight_output.keys():
             if (key != 'pop') and (key != 'out_spec'): self.dataset.attrs[key] = self.starlight_output[key]
             
     
-    def closedb(self):
+    def closeslightdb(self):
         self.db.close()
         
 
@@ -127,7 +135,7 @@ def main(argv):
     txt2hdf5 = starlightout2hdf5(args.st[0], args.sd[0], args.o[0])
     
     #Create db
-    txt2hdf5.createdbfile(args.o[0], args.d[0], args.b[0])
+    txt2hdf5.createslihgtdbfile(args.o[0], args.d[0], args.b[0])
     
     for i in range(len(filelist)):
         #Read sdss_file
@@ -135,11 +143,9 @@ def main(argv):
         #Read starlight_file
         txt2hdf5.readstarlightoutput(filelist[i]['starlight_file'])
         #Write to DB
-        txt2hdf5.savetohdf5file()
+        txt2hdf5.savetoslightdb()
     #Close DB
-    txt2hdf5.closedb()
-
-
+    txt2hdf5.closeslightdb()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
