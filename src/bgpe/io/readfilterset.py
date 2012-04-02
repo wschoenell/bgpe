@@ -6,21 +6,21 @@ Created on Feb 23, 2012
 
 import numpy as np
 
+from bgpe.core.exceptions import ReadFilterException
+
 class readfilterset(object):
     '''
-    This class reads a filterset from file and returns an array "filter"
-    with it.
+        This class reads a filterset from file and returns an array "filter"
+        with it.
     '''
-
-
+    
     def __init__(self):
         pass
     
-    def read(self):        
+    def read(self, filterfile):        
         try:
             dt = np.dtype ([('ID_filter', 'S20'), ('wl', 'f'), ('transm', 'f')])
-            self.filter = np.loadtxt(self.filterfile, dtype=dt)
-            return True
+            self.filterset = np.loadtxt(filterfile, dtype=dt)
         except:
-            return False #Exception here!!!
+            raise ReadFilterException('Cannot read filterfile %s' % filterfile)
         
