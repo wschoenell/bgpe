@@ -71,8 +71,8 @@ class starlight2photo(object):
         fobs_norm = out.attrs.get('fobs_norm')
         syn = out.value
     
-        obs['flux'] = obs['flux'] * 1e-17 #/fobs_norm
-        obs['err'] = obs['err'] * 1e-17 #/fobs_norm
+        obs['flux'] = obs['flux'] * 1e-17
+        obs['err'] = obs['err'] * 1e-17
         syn['flux_obs'] = syn['flux_obs'] * fobs_norm * 1e-17
         syn['flux_syn'] = syn['flux_syn'] * fobs_norm * 1e-17
         
@@ -98,8 +98,8 @@ class starlight2photo(object):
                 transm_ = filter_v['transm']
     
             JLambda = np.max(filter_v['wl'])-np.min(filter_v['wl']) #TODO: Do this when reading!!
-            #t_lambda = transm_/np.trapz(transm_,wl_) #TODO: Do this when reading!!
-            t_lambda = np.trapz( transm_ * c / (wl_**2) ,wl_) #TODO: Do this when reading!!
+            t_lambda = transm_/np.trapz(transm_,wl_) #TODO: Do this when reading!!
+            t_lambda_nu = np.trapz( transm_ * c / (wl_**2) ,wl_) #TODO: Do this when reading!!
             
             #Check if the spectrum in the filterset range is ok. Good pixels should be signaled with flag(lambda) = 0 or 1.
             print obs_cut['err']
@@ -125,19 +125,21 @@ class starlight2photo(object):
                     print np.shape(good), np.shape(bad), np.shape(obs_cut), np.shape(syn_cut)
                     obs_cut['flux'][bad] = syn_cut['flux_syn'][bad]
                     #then, eval the integral for flux
-                    taux.append( np.float( np.trapz(obs_cut['flux'] * transm_, wl_) / t_lambda ))
+                    taux.append( np.float( np.trapz(obs_cut['flux'] * transm_, wl_) / t_lambda_nu ))
                     #and for the error (SDSS effective resolution == 3 \AA)
-                    #eaux.append( np.sqrt( JLambda * 3 * np.mean(obs_cut['err'][good]**2 * t_lambda[good]**2) ) ) # TODO: Error propagation
+                    eaux.append( np.sqrt( JLambda * 3 * np.mean(obs_cut['err'][good]**2 * t_lambda[good]**2) ) ) # TODO: Error propagation
                     #print j+' Some bad pixels'    #debug
             else:
                 #If there is no bad pixel, just eval the integral for flux
-                taux.append( np.float( np.trapz(obs_cut['flux'] * transm_, wl_) / t_lambda ))
+                taux.append( np.float( np.trapz(obs_cut['flux'] * transm_, wl_) / t_lambda_nu ))
                 #and for the error
-                #eaux.append( np.sqrt( JLambda * 3 * np.mean(obs_cut['err']**2 * t_lambda**2) ) ) # TODO: Error propagation
+                eaux.append( np.sqrt( JLambda * 3 * np.mean(obs_cut['err']**2 * t_lambda**2) ) ) # TODO: Error propagation
                 #print j+' No bad pixel'    #debug
         
         taux = -2.5 * np.log10( taux ) - 48.6
         taux[taux == np.inf] = 0
+        eaux = -2.5 * np.log10( eaux ) - 48.6
+        #taux[taux == np.inf] = 0
         
         print taux, eaux
                         
