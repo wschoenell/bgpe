@@ -23,8 +23,8 @@ class plot_fit_and_SFH(object):
         self.sl_out = sl_out
         self.fig = plt.figure(figure)
     
-    def set_title(self, title):
-        self.axleft_upp.set_title(title)
+    def set_title(self, title, color='red'):
+        self.fig.text(.6,.92, title, color=color)
     
     def draw_legends(self, metallicity=True, metallicityLoc=2):
         if(metallicity == True): self.axright_low.legend(loc=metallicityLoc)
