@@ -23,15 +23,21 @@ class plot_fit_and_SFH(object):
         self.sl_out = sl_out
         self.fig = plt.figure(figure)
     
+    def set_title(self, title):
+        self.axleft_upp.set_title(title)
+    
+    def draw_legends(self, metallicity=True, metallicityLoc=2):
+        if(metallicity == True): self.axright_low.legend(loc=metallicityLoc)
+    
     def plot_fig_starlight(self):
         
-        fig = plt.figure(1)
+        self.fig.clf()
         plt.clf()
         
         #Some configurations
         #plt.rc('axes', grid=True)
         nullfmt = NullFormatter()
-        Zcolor = ['magenta', 'cyan', 'blue', 'green', 'blue', 'red', 'magenta', 'cyan', 'blue', 'green', 'blue,', 'red']
+        Zcolor = ['magenta', 'cyan', 'blue', 'green', 'black', 'red', 'magenta', 'cyan', 'blue', 'green', 'black,', 'red']
         lim_res_low = -.29
         lim_res_upp = .99
         
@@ -42,33 +48,33 @@ class plot_fit_and_SFH(object):
         box_right_upp = [.6, .4, .3, .3]
         
         #Create the axes
-        axleft_low  = fig.add_axes(box_left_low)
-        axleft_upp  = fig.add_axes(box_left_upp, sharex=axleft_low)
-        axright_low = fig.add_axes(box_right_low)
-        axright_upp = fig.add_axes(box_right_upp, sharex=axright_low)
+        self.axleft_low  = self.fig.add_axes(box_left_low)
+        self.axleft_upp  = self.fig.add_axes(box_left_upp, sharex=self.axleft_low)
+        self.axright_low = self.fig.add_axes(box_right_low)
+        self.axright_upp = self.fig.add_axes(box_right_upp, sharex=self.axright_low)
         
         #.... Plots ...
         # LEFT
         ### LEFT - UPPER
-        axleft_upp.plot(self.sl_out['out_spec']['wl'], self.sl_out['out_spec']['flux_obs'], color='blue') # Observed
-        axleft_upp.plot(self.sl_out['out_spec']['wl'], self.sl_out['out_spec']['flux_syn'], color='red') # Synthetic
+        self.axleft_upp.plot(self.sl_out['out_spec']['wl'], self.sl_out['out_spec']['flux_obs'], color='blue') # Observed
+        self.axleft_upp.plot(self.sl_out['out_spec']['wl'], self.sl_out['out_spec']['flux_syn'], color='red') # Synthetic
         
         np.seterr(divide='ignore') # Ignore zero-division error.
         err = np.ma.array(np.divide(1.,(self.sl_out['out_spec']['wei'])))
-        axleft_upp.plot(self.sl_out['out_spec']['wl'][err > 0], err[err > 0], color='black') # Error 
+        self.axleft_upp.plot(self.sl_out['out_spec']['wl'][err > 0], err[err > 0], color='black') # Error 
         
         mi_ = np.min(self.sl_out['out_spec']['wl'])
         ma_ = np.max(self.sl_out['out_spec']['wl'])
-        axleft_upp.set_xlim(mi_*0.9, ma_*1.1)
+        self.axleft_upp.set_xlim(mi_*0.9, ma_*1.1)
         
         ### LEFT - LOWER
         res = np.ma.array(self.sl_out['out_spec']['flux_obs'] - self.sl_out['out_spec']['flux_syn'])
-        axleft_low.plot(self.sl_out['out_spec']['wl'], res, color='black') #All
+        self.axleft_low.plot(self.sl_out['out_spec']['wl'], res, color='black') #All
         r_ = np.ma.masked_where(self.sl_out['out_spec']['wei'] > 0, res)
-        axleft_low.plot(self.sl_out['out_spec']['wl'], r_, color='blue') #If wei > 0
+        self.axleft_low.plot(self.sl_out['out_spec']['wl'], r_, color='blue') #If wei > 0
         r_ = np.ma.masked_where(self.sl_out['out_spec']['wei'] == 0, res)
-        axleft_low.plot(self.sl_out['out_spec']['wl'], r_, color='magenta') #If wei == 0
-        axleft_low.set_ylim(lim_res_low, lim_res_upp)
+        self.axleft_low.plot(self.sl_out['out_spec']['wl'], r_, color='magenta') #If wei == 0
+        self.axleft_low.set_ylim(lim_res_low, lim_res_upp)
         
         ## RIGHT
         log_age = np.log10(self.sl_out['pop'][3])
@@ -85,8 +91,8 @@ class plot_fit_and_SFH(object):
         i_color = 0
         for i_Z in np.unique(Z):
             v_ = (Z == i_Z)
-            #axright_upp.bar(log_age[v_], xj[v_], width=Zwidth, align='center', alpha=Zalpha, color=Zcolor[i_color])
-            axright_upp.bar(log_age[v_], xj[v_], width=Zwidth, align='center', color=Zcolor[i_color], bottom=aux_sum)
+            #self.axright_upp.bar(log_age[v_], xj[v_], width=Zwidth, align='center', alpha=Zalpha, color=Zcolor[i_color])
+            self.axright_upp.bar(log_age[v_], xj[v_], width=Zwidth, align='center', color=Zcolor[i_color], bottom=aux_sum, label=('%3.4f' % i_Z))
             aux_sum = aux_sum + xj[v_]
             i_color = i_color+1
         
@@ -95,34 +101,36 @@ class plot_fit_and_SFH(object):
         i_color = 0
         for i_Z in np.unique(Z):
             v_ = (Z == i_Z)
-            #axright_low.bar(log_age[v_], mu_cor[v_], width=Zwidth, align='center', alpha=Zalpha, color=Zcolor[i_color])
-            axright_low.bar(log_age[v_], mu_cor[v_], width=Zwidth, align='center', color=Zcolor[i_color], bottom=aux_sum)
+            #self.axright_low.bar(log_age[v_], mu_cor[v_], width=Zwidth, align='center', alpha=Zalpha, color=Zcolor[i_color])
+            self.axright_low.bar(log_age[v_], mu_cor[v_], width=Zwidth, align='center', color=Zcolor[i_color], bottom=aux_sum, label=('%3.4f' % i_Z))
             aux_sum = aux_sum + mu_cor[v_]
             i_color = i_color+1
+        self.axright_low.set_xlim(np.min(log_age)*.99,np.max(log_age)*1.01)
+        
         
         
         #Remove undisered labels
-        #axleft_upp.xaxis.set_major_formatter(nullfmt)
-        #axright_upp.xaxis.set_major_formatter(nullfmt)
+        #self.axleft_upp.xaxis.set_major_formatter(nullfmt)
+        #self.axright_upp.xaxis.set_major_formatter(nullfmt)
         #Remove last lower ytick
-        axleft_low.set_yticks(axleft_low.get_yticks()[:-1])
-        axright_low.set_yticks(axright_low.get_yticks()[:-1])
+        self.axleft_low.set_yticks(self.axleft_low.get_yticks()[:-1])
+        self.axright_low.set_yticks(self.axright_low.get_yticks()[:-1])
         
         
         
         #Axis Labels
-        axright_low.set_xlabel('log age [yr]')
-        axright_low.set_ylabel('$\log\ \mu_j$ [%]')
-        axright_upp.set_ylabel('$x_j$ [%]')
+        self.axright_low.set_xlabel('log age [yr]')
+        self.axright_low.set_ylabel('$\log\ \mu_j$ [%]')
+        self.axright_upp.set_ylabel('$x_j$ [%]')
         
-        axleft_low.set_xlabel('$\lambda [\AA]$')
-        axleft_low.set_ylabel('Residual spectrum')
-        axleft_upp.set_ylabel('$F_\lambda [normalized]$')
+        self.axleft_low.set_xlabel('$\lambda [\AA]$')
+        self.axleft_low.set_ylabel('Residual spectrum')
+        self.axleft_upp.set_ylabel('$F_\lambda [normalized]$')
         
         
         # Some fit labels...
-        fig.text(.6,.88, '$\chi^2 =\ $'+('%3.2f' % self.sl_out['chi2']) ) 
-        fig.text(.6,.84, 'adev = '+('%3.2f' % self.sl_out['adev']) ) 
-        fig.text(.6,.80, '$S/N =\ $'+('%3.2f' % self.sl_out['SN_normwin']) ) 
-        fig.text(.6,.76, '$A_V =\ $'+('%3.2f' % self.sl_out['A_V']) ) 
-        fig.text(.6,.72, '$\sigma_\star =\ '+('%3.2f' % self.sl_out['v_d'])+'\ $km/s\t$v_\star =\ '+('%3.2f' % self.sl_out['v_0'])+'\ $km/s' ) 
+        self.fig.text(.6,.88, '$\chi^2 =\ $'+('%3.2f' % self.sl_out['chi2']) ) 
+        self.fig.text(.6,.84, 'adev = '+('%3.2f' % self.sl_out['adev']) ) 
+        self.fig.text(.6,.80, '$S/N =\ $'+('%3.2f' % self.sl_out['SN_normwin']) ) 
+        self.fig.text(.6,.76, '$A_V =\ $'+('%3.2f' % self.sl_out['A_V']) ) 
+        self.fig.text(.6,.72, '$\sigma_\star =\ '+('%3.2f' % self.sl_out['v_d'])+'\ $km/s\t$v_\star =\ '+('%3.2f' % self.sl_out['v_0'])+'\ $km/s' ) 
