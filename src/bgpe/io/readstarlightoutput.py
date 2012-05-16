@@ -19,6 +19,8 @@ def ReadStarlightFile(filename, just_spec=False):
     fp.close()
 
     StarlightOut = {}
+    
+    StarlightOut['arq_read'] = filename
 
     if(just_spec == False):
     
