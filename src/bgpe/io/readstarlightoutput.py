@@ -118,9 +118,12 @@ def ReadStarlightFile(filename, just_spec=False):
     iaux2 = iaux1 + 1
     #iaux3 = iaux1 + StarlightOut['Nl_obs']
 
-    
-    dt = np.dtype([('wl', 'float32'), ('flux_obs', 'float32'), ('flux_syn', 'float32'), ('wei', 'float32'), ('Best_f_SSP', 'float32')])
-    out_spec = np.loadtxt(filename, dtype=dt, skiprows=iaux2)
+    try:
+        dt = np.dtype([('wl', 'float32'), ('flux_obs', 'float32'), ('flux_syn', 'float32'), ('wei', 'float32'), ('Best_f_SSP', 'float32')])
+        out_spec = np.loadtxt(filename, dtype=dt, skiprows=iaux2)
+    except:
+        dt = np.dtype([('wl', 'float32'), ('flux_obs', 'float32'), ('flux_syn', 'float32'), ('wei', 'float32')])
+        out_spec = np.loadtxt(filename, dtype=dt, skiprows=iaux2)
     
     StarlightOut['out_spec'] = out_spec
     
