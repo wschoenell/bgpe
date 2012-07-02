@@ -5,11 +5,15 @@ Created on Feb 23, 2012
 '''
 
 import sys
+import time
 import argparse
 import string as st
 import numpy as np
 import datetime
 import h5py
+import atpy
+
+import pystarlight.io.starlighttable #io.starlighttable #@UnusedImport
 
 from bgpe.core.exceptions import HDF5dbException
 from bgpe.core.version import _bgpe_name_, _bgpe_version_
@@ -18,7 +22,8 @@ from bgpe.io.readsdssinput import Read7xt
 
 
 class starlightout2hdf5(object):
-    def __init__(self, sdss_txt_dir, starlight_txt_dir, db_file, compression=9):
+    def __init__(self, sdss_txt_dir, starlight_txt_dir, db_file, starlight_version='starlightv4', compression=9):
+        self.starlight_version = starlight_version
         self.compression = compression
         self.db_file = db_file
         self.sdss_txt_dir = sdss_txt_dir
@@ -26,18 +31,20 @@ class starlightout2hdf5(object):
         
     def readstarlightoutput(self, starlight_file):
         try:
-            self.starlight_output = ReadStarlightFile(self.starlight_txt_dir+starlight_file)
+            #self.starlight_output = ReadStarlightFile(self.starlight_txt_dir+starlight_file)
+            self.starlight_output = atpy.TableSet(self.starlight_txt_dir+starlight_file, type=self.starlight_version)
         except:
-            raise HDF5dbException('Could not read Starlight file %s' % starlight_file)
+            raise HDF5dbException('Could not read Starlight file %s' % self.starlight_txt_dir+starlight_file)
         self.starlight_file = starlight_file 
         
         
     def readsdssinput(self, sdss_file):
         try:
-            self.sdss_input = Read7xt(self.sdss_txt_dir+sdss_file)
+            #self.sdss_input = Read7xt(self.sdss_txt_dir+sdss_file)
+            self.sdss_input = atpy.TableSet(self.sdss_txt_dir+sdss_file, type='starlight_input').tables['starlight_input'].data
+            self.sdss_file = sdss_file
         except:
-            raise HDF5dbException('Could not read SDSS file %s' % sdss_file)
-        self.sdss_file = sdss_file 
+            raise HDF5dbException('Could not read SDSS file %s' % self.sdss_txt_dir+sdss_file)
 
     
     def createslihgtdbfile(self, db_file, dr, base):
@@ -84,14 +91,14 @@ class starlightout2hdf5(object):
         # Save Starlight .txt outputfile:
         try:
             self.dataset = self.db.create_dataset( ('/%s/output/%s/%s.%s.%s' % (self.dr, self.base, f_[0], f_[1], f_[2])),
-                                                  data = self.starlight_output['out_spec'], compression=self.compression)
+                                                  data = self.starlight_output.spectra.data, compression=self.compression)
         except:
             raise HDF5dbException('Could not create field to %s.%s.%s. Duplicate entries on the input?'
                             % ( f_[0], f_[1], f_[2] ) )
         
         # Save the Starlight Output properties (A_V, v0, vd, ...) as dataset attributes
-        for key in self.starlight_output.keys():
-            if (key != 'pop') and (key != 'out_spec'): self.dataset.attrs[key] = self.starlight_output[key]
+        for key, value in self.starlight_output.keywords.items():
+            if (key != 'pop') and (key != 'out_spec'): self.dataset.attrs[key] = value
             
     
     def closeslightdb(self):
@@ -120,6 +127,7 @@ def argparser():
 
 
 def main(argv):
+    time_start = time.time()
     args = argparser()
 
     ''' Read filelist (filelist should have 2 columns: sdss_file, starlight_file '''
@@ -146,6 +154,7 @@ def main(argv):
         txt2hdf5.savetoslightdb()
     #Close DB
     txt2hdf5.closeslightdb()
+    print 'DONE! Total time: %3.4f seconds' % (time.time() - time_start)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
