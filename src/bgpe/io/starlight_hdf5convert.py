@@ -17,9 +17,6 @@ import pystarlight.io.starlighttable #io.starlighttable #@UnusedImport
 
 from bgpe.core.exceptions import HDF5dbException
 from bgpe.core.version import _bgpe_name_, _bgpe_version_
-from bgpe.io.readstarlightoutput import ReadStarlightFile
-from bgpe.io.readsdssinput import Read7xt
-
 
 class starlightout2hdf5(object):
     def __init__(self, sdss_txt_dir, starlight_txt_dir, db_file, starlight_version='starlightv4', compression=9):
@@ -155,7 +152,4 @@ def main(argv):
     #Close DB
     txt2hdf5.closeslightdb()
     print 'DONE! Total time: %3.4f seconds' % (time.time() - time_start)
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
     
