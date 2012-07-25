@@ -1,0 +1,75 @@
+%% Simple tex document describing magnitude conversions...
+
+\documentclass[11pt]{article}
+
+\usepackage{graphics}
+\usepackage{epsfig}
+\usepackage[usenames]{color}
+\usepackage{xspace}
+
+
+\topmargin -1.5cm        % read Lamport p.163
+\oddsidemargin -0.04cm   % read Lamport p.163
+\evensidemargin -0.04cm  % same as oddsidemargin but for left-hand pages
+\textwidth 16.59cm
+\textheight 21.94cm
+%\pagestyle{empty}       % Uncomment if don't want page numbers
+\parskip 7.2pt           % sets spacing between paragraphs
+%\renewcommand{\baselinestretch}{1.5} % Uncomment for 1.5 spacing between lines
+\parindent 0pt           % sets leading space for paragraphs
+
+
+% ********************* MY DEFINITIONS *****************************
+\def\ni{\noindent}                                       %No indent%
+\def\ls{\vskip 12.045pt}                            %One Line space%
+\def\etal{et\thinspace al.\ }                               %et al.%
+\def\etp{et\thinspace al.}    %et al., but with no space at the end%
+
+\def\ojo{\fbox{\bf !$\odot$j$\odot$!}}      %Olho! Needs Correction%
+
+\newcommand{\Ca}[1]{{\bf\color{red} #1}}
+\newcommand{\Cb}[1]{{\bf\color{blue} #1}}
+%\newcommand{\Cc}[1]{{\color{BurntOrange} #1}}
+\newcommand{\Cc}[1]{{\bf\color{RawSienna} #1}}
+\newcommand{\Cd}[1]{{\bf\color{OliveGreen} #1}}
+%*******************************************************************
+
+\begin{document}
+
+\section{From spectrum to magnitudes}
+
+$$ m_{AB} = -2.5 \log{ {\int F_\nu T_\nu d\nu}\over{\int T_\nu d\nu} } - 48.6 $$
+
+\ni but,
+
+$$ \lambda F_\lambda = \nu F_\nu $$ and $$ \nu = \frac{c}{\lambda} $$
+
+so:
+
+$$ m_{AB} = -2.5 \log { {\int F_\lambda T_\lambda d\lambda}\over{\int T_\lambda \frac{c}{\lambda^2} d\lambda} } - 48.6 $$
+
+
+$$ m_{AB} = -2.5 \log \int F_\lambda T_\lambda d\lambda + 2.5 \log \int T_\lambda \frac{c}{\lambda^2} d\lambda - 48.6 $$
+
+\section{Error Propagation}
+
+Here we assume that all the $\lambda$s are independent measurements, which is not always the truth (i.e. for SDSS we resampled from 3\AA\ to 1\AA).
+
+$$ \sigma^2(m_{AB}(F_\lambda, T_\lambda)) = \sqrt{\left| \frac{\partial m_{AB}}{\partial F_\lambda} \right|^2 \sigma^2_{F_\lambda} + \left| \frac{\partial m_{AB}}{\partial T_\lambda} \right|^2 \sigma^2_{T_\lambda} } $$
+
+if we neglect the error associated to the filter trasmission curve (i.e. $\sigma^2_{T_\lambda} = 0$), we can simplify to:
+
+$$ \sigma(m_{AB}) = \left| \frac{\partial m_{AB}}{\partial F_\lambda} \right| \sigma(F_\lambda)$$
+
+$$ \frac{\partial m_{AB}}{\partial F_\lambda} = -2.5 \frac{1}{\ln 10 \int F_\lambda T_\lambda d\lambda} \int T_\lambda d\lambda $$
+
+And use the error associated to the spectra $\sigma^2(F_\lambda)$ as:
+
+$$\sigma^2(F_\lambda) = \frac{1}{N_\lambda} \sum_\lambda \epsilon^2_\lambda$$ where $\epsilon_\lambda$ is the error from SDSS. 
+
+So, our final error formula is:
+
+$$ \sigma(m_{AB}) = \sqrt{ \left| -2.5 \frac{1}{\ln 10 \int F_\lambda T_\lambda d\lambda} \int T_\lambda d\lambda  \right|^2  \frac{1}{N_\lambda} \sum_\lambda \epsilon^2_\lambda }$$
+
+$$ \sigma(m_{AB}) = \left| -2.5 \frac{1}{\ln 10 \int F_\lambda T_\lambda d\lambda} \int T_\lambda d\lambda  \right| \sqrt{ \frac{1}{N_\lambda} \sum_\lambda \epsilon^2_\lambda }$$
+\end{document}
