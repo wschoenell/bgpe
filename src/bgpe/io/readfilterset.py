@@ -24,3 +24,8 @@ class readfilterset(object):
         except:
             raise ReadFilterException('Cannot read filterfile %s' % filterfile)
         
+    def calc_filteravgwls(self):
+        avg = []
+        for fid in np.unique(self.filterset['ID_filter']):
+            avg.append(np.average(self.filterset[self.filterset['ID_filter'] == fid]['wl']))
+        self.filteravgwls = np.array(avg)
