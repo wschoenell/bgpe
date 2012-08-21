@@ -1,4 +1,4 @@
-%% Simple tex document describing magnitude conversions...
+% % Simple tex document describing magnitude conversions...
 
 \documentclass[11pt]{article}
 
@@ -8,14 +8,12 @@
 \usepackage{xspace}
 
 
-\topmargin -1.5cm        % read Lamport p.163
-\oddsidemargin -0.04cm   % read Lamport p.163
-\evensidemargin -0.04cm  % same as oddsidemargin but for left-hand pages
-\textwidth 16.59cm
-\textheight 21.94cm
-%\pagestyle{empty}       % Uncomment if don't want page numbers
+\topmargin -1.5cm        % read Lamport p.163 \oddsidemargin -0.04cm   % read
+Lamport p.163 \evensidemargin -0.04cm  % same as oddsidemargin but for left-hand
+pages \textwidth 16.59cm \textheight 21.94cm
+% \pagestyle{empty}       % Uncomment if don't want page numbers
 \parskip 7.2pt           % sets spacing between paragraphs
-%\renewcommand{\baselinestretch}{1.5} % Uncomment for 1.5 spacing between lines
+% \renewcommand{\baselinestretch}{1.5} % Uncomment for 1.5 spacing between lines
 \parindent 0pt           % sets leading space for paragraphs
 
 
@@ -29,16 +27,18 @@
 
 \newcommand{\Ca}[1]{{\bf\color{red} #1}}
 \newcommand{\Cb}[1]{{\bf\color{blue} #1}}
-%\newcommand{\Cc}[1]{{\color{BurntOrange} #1}}
+% \newcommand{\Cc}[1]{{\color{BurntOrange} #1}}
 \newcommand{\Cc}[1]{{\bf\color{RawSienna} #1}}
 \newcommand{\Cd}[1]{{\bf\color{OliveGreen} #1}}
-%*******************************************************************
+% *******************************************************************
 
 \begin{document}
 
 \section{From spectrum to magnitudes}
 
-$$ m_{AB} = -2.5 \log{ {\int F_\nu T_\nu d\nu}\over{\int T_\nu d\nu} } - 48.6 $$
+\begin{equation}
+m_{AB} = -2.5 \log{ {\int F_\nu T_\nu d\nu}\over{\int T_\nu d\nu} } - 48.6
+\end{equation}
 
 \ni but,
 
@@ -46,30 +46,69 @@ $$ \lambda F_\lambda = \nu F_\nu $$ and $$ \nu = \frac{c}{\lambda} $$
 
 so:
 
-$$ m_{AB} = -2.5 \log { {\int F_\lambda T_\lambda d\lambda}\over{\int T_\lambda \frac{c}{\lambda^2} d\lambda} } - 48.6 $$
+\begin{equation}
+m_{AB} = -2.5 \log { {\int F_\lambda T_\lambda d\lambda}\over{\int T_\lambda \frac{c}{\lambda^2} d\lambda} } - 48.6
+\end{equation}
 
-
-$$ m_{AB} = -2.5 \log \int F_\lambda T_\lambda d\lambda + 2.5 \log \int T_\lambda \frac{c}{\lambda^2} d\lambda - 48.6 $$
+\begin{equation}
+\label{eq:m_ab}
+m_{A B} = -2.5 \log \int F_\lambda T_\lambda d\lambda + 2.5 \log \int T_\lambda \frac{c}{\lambda^2} d\lambda - 48.6
+\end{equation}
 
 \section{Error Propagation}
 
-Here we assume that all the $\lambda$s are independent measurements, which is not always the truth (i.e. for SDSS we resampled from 3\AA\ to 1\AA).
+For error calculation matters, we rewrite equation \ref{eq:m_ab} as:
+\begin{equation}
+\label{eq:m_ab_sum}
+m_{A B} = -2.5 \log \sum_\lambda F_\lambda T_\lambda \Delta \lambda + 2.5 \log \sum_\lambda T_\lambda \frac{c}{\lambda^2} d\lambda - 48.6
+\end{equation}
 
-$$ \sigma^2(m_{AB}(F_\lambda, T_\lambda)) = \sqrt{\left| \frac{\partial m_{AB}}{\partial F_\lambda} \right|^2 \sigma^2_{F_\lambda} + \left| \frac{\partial m_{AB}}{\partial T_\lambda} \right|^2 \sigma^2_{T_\lambda} } $$
+\ni in our case, we do not consider the error on $\lambda$ and the error on
+$T_\lambda$, so the equation can be simplified to:
 
-if we neglect the error associated to the filter trasmission curve (i.e. $\sigma^2_{T_\lambda} = 0$), we can simplify to:
+\begin{equation}
+m_{A B} = -2.5 \log \sum_\lambda F_\lambda T_\lambda \Delta \lambda
+\end{equation}
 
-$$ \sigma(m_{AB}) = \left| \frac{\partial m_{AB}}{\partial F_\lambda} \right| \sigma(F_\lambda)$$
+and, then, we to simplify the error calculations we rewrite it:
+\begin{equation}
+m_{A B} = -2.5 \log \sum_\lambda G(F_\lambda)
+\end{equation}
 
-$$ \frac{\partial m_{AB}}{\partial F_\lambda} = -2.5 \frac{1}{\ln 10 \int F_\lambda T_\lambda d\lambda} \int T_\lambda d\lambda $$
+\ni and divide the error calculation on two parts: one for $\sum_\lambda G(F_\lambda)$ and other
+for the $\log$ of it. So, the first part is then:
 
-And use the error associated to the spectra $\sigma^2(F_\lambda)$ as:
+\begin{equation}
+\sigma^2(\sum_\lambda G(F_\lambda))
+= \sum_\lambda \left( \frac{\partial F_\lambda T_\lambda \Delta\lambda}{\partial F_\lambda} \sigma(F_\lambda) \right)^2 \\
+= \Delta\lambda^2 \sum_\lambda T^2_\lambda \sigma^2(F_\lambda)
+\end{equation}
 
-$$\sigma^2(F_\lambda) = \frac{1}{N_\lambda} \sum_\lambda \epsilon^2_\lambda$$ where $\epsilon_\lambda$ is the error from SDSS. 
+\newpage{}
 
-So, our final error formula is:
+and the second part will be:
 
-$$ \sigma(m_{AB}) = \sqrt{ \left| -2.5 \frac{1}{\ln 10 \int F_\lambda T_\lambda d\lambda} \int T_\lambda d\lambda  \right|^2  \frac{1}{N_\lambda} \sum_\lambda \epsilon^2_\lambda }$$
+\begin{equation}
+\sigma^2(m_{AB}) = \left|\frac{\partial m_{AB}}{\partial \sum_\lambda G}\right|^2\ \sigma^2 \left(\sum_\lambda G \right)
+\end{equation}
 
-$$ \sigma(m_{AB}) = \left| -2.5 \frac{1}{\ln 10 \int F_\lambda T_\lambda d\lambda} \int T_\lambda d\lambda  \right| \sqrt{ \frac{1}{N_\lambda} \sum_\lambda \epsilon^2_\lambda }$$
+which gives us:
+
+\begin{equation}
+\sigma(m_{AB}) = \frac{2.5}{\ln 10} \sqrt{\frac{ \sigma^2(\sum_\lambda G) }{\left(\sum_\lambda F_\lambda T_\lambda \Delta_\lambda\right)^2}}
+\end{equation}
+
+\begin{equation}
+\sigma(m_{AB}) = \frac{2.5}{\ln 10} \frac{\sqrt{\sum_\lambda T^2_\lambda \Delta^2_\lambda \sigma^2(F_\lambda)}}
+				                         {\sum_\lambda F_\lambda T_\lambda \Delta_\lambda}
+\end{equation}
+
+if we consider $\Delta \lambda$ constant on the filter window, we can simplify the equation to:
+
+\begin{equation}
+\sigma(m_{AB}) = \frac{2.5}{\ln 10} \frac{\sqrt{\sum_\lambda T^2_\lambda\sigma^2(F_\lambda)}}
+											{   {\sum_\lambda F_\lambda T_\lambda} }
+\end{equation}
+
+
 \end{document}
