@@ -44,7 +44,7 @@ m_{AB} = -2.5 \log{ {\int F_\nu T_\nu d\nu}\over{\int T_\nu d\nu} } - 48.6
 
 \ni but,
 
-$$ \lambda F_\lambda = \nu F_\nu $$ and $$ \nu = \frac{c}{\lambda} $$
+$$ F_\lambda d\lambda = F_\nu d\nu $$ and $$ \nu = \frac{c}{\lambda} $$
 
 so:
 
@@ -62,22 +62,22 @@ m_{A B} = -2.5 \log \int F_\lambda T_\lambda d\lambda + 2.5 \log \int T_\lambda 
 For error calculation matters, we rewrite equation \ref{eq:m_ab} as:
 \begin{equation}
 \label{eq:m_ab_sum}
-m_{A B} = -2.5 \log \sum_\lambda F_\lambda T_\lambda \Delta \lambda + 2.5 \log \sum_\lambda T_\lambda \frac{c}{\lambda^2} d\lambda - 48.6
+m_{A B} = -2.5 \log \sum_\lambda F_\lambda T_\lambda \Delta \lambda + 2.5 \log \sum_\lambda T_\lambda \frac{c}{\lambda^2} \Delta\lambda - 48.6
 \end{equation}
 
 \ni in our case, we do not consider the error on $\lambda$ and the error on
 $T_\lambda$, so the equation can be simplified to:
 
 \begin{equation}
-m_{A B} = -2.5 \log \sum_\lambda F_\lambda T_\lambda \Delta \lambda
+m_{A B}^\prime = -2.5 \log \sum_\lambda F_\lambda T_\lambda \Delta \lambda
 \end{equation}
 
 and, then, we to simplify the error calculations we rewrite it:
 \begin{equation}
-m_{A B} = -2.5 \log \sum_\lambda G(F_\lambda)
+m_{A B}^\prime = -2.5 \log \sum_\lambda G(F_\lambda)
 \end{equation}
 
-\ni and divide the error calculation on two parts: one for $\sum_\lambda G(F_\lambda)$ and other
+\ni and divide the error calculation in two parts: one for $\sum_\lambda G(F_\lambda)$ and other
 for the $\log$ of it. So, the first part is then:
 
 \begin{equation}
@@ -111,6 +111,11 @@ if we consider $\Delta \lambda$ constant on the filter window, we can simplify t
 \sigma(m_{AB}) = \frac{2.5}{\ln 10} \frac{\sqrt{\sum_\lambda T^2_\lambda\sigma^2(F_\lambda)}}
 											{   {\sum_\lambda F_\lambda T_\lambda} }
 \end{equation}
+
+One can see that the denominator is N times the weighted (by $T_l$) mean flux.
+The numerator, on the other hand, is $\sqrt{N}$ times the weighted mean RMS
+error, so that in the end the error in magnitude is $\frac{1}{\sqrt{N}}$ times
+the typical relative error $\frac{\sigma_l}{F_l}$.
 
 
 \end{document}
