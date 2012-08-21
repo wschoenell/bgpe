@@ -13,6 +13,7 @@ import pystarlight.io.starlighttable #io.starlighttable #@UnusedImport
 
 from bgpe.io.readfilterset import readfilterset
 from bgpe.photometry.syntphot import photoconv
+from bgpe.photometry.syntphot import spec2filterset
 from bgpe.util.cosmo import zcor
 
 from bgpe.util.constants import c_AngSec
@@ -43,13 +44,13 @@ obs_spec['error'] = obs_spec['error'] * 1e-17
 #print spec2filter(filter, obs_spec, model_spec, log_level=logging.DEBUG)
 plt.clf()
 c = photoconv()
-x = c.spec2filterset(f.filterset, obs_spec, model_spec, dlambda_eff = 3.0)
+x = spec2filterset(f.filterset, obs_spec, model_spec, dlambda_eff = 3.0)
 plt.plot(f.filteravgwls, x['m_ab'])
 for z in np.arange(.1, 1, .2):
     print 'z ==', z
     O = zcor(obs_spec, z)
     M = zcor(model_spec, z)
-    x = c.spec2filterset(f.filterset, O, M, dlambda_eff = 3.0)
+    x = spec2filterset(f.filterset, O, M, dlambda_eff = 3.0)
     plt.plot(f.filteravgwls, x['m_ab'])
     if(z > 0.3):
         plt.plot(O['wl'], -2.5*np.log10(O['flux']*(O['wl']**2)/c_AngSec) - 48.6 , color='black', alpha=.3)
