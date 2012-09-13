@@ -10,9 +10,6 @@ import numpy as np
 import logging
 import bgpe.core.log
 
-from bgpe.util.constants import c_AngSec as c # Speed of light in angstroms per second
-
-
 
 def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlambda_eff = None):
     ''' Converts a spectrum on AB magnitude given a filter bandpass.
@@ -119,15 +116,12 @@ def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlamb
 
     else: # If our observed obs_spec is ALL ok. =)
         log.debug('No bad pixel! =)')
-                                    
-    t_lambda_nu = np.trapz( transm_ * ( c / wl_**2 ) ,wl_)
-    aux_integral = np.trapz( obs_cut['flux'] * transm_, wl_ )
     
-    m_ab = -2.5 * np.log10( aux_integral / t_lambda_nu ) - 48.6
+    m_ab = -2.5 * np.log10( np.trapz(obs_cut['flux'] * transm_ * wl_, wl_)  / np.trapz(transm_ / wl_, wl_) ) - 2.41
     
     if('error' in obs_cut.dtype.names):
         flag = (obs_cut['error'] > 0)
-        e_ab = 1.0857362047581294 * np.sqrt(np.sum(transm_[flag]**2 * obs_cut['error'][flag]**2)) / np.sum(obs_cut['flux'][flag] * transm_[flag])
+        e_ab = 1.0857362047581294 * np.sqrt(np.sum(transm_[flag]**2 * obs_cut['error'][flag]**2) * wl_[flag]**2) / np.sum(obs_cut['flux'][flag] * transm_[flag] * wl_[flag])
     else:
         e_ab = 0.0
 
