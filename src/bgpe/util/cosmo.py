@@ -23,5 +23,5 @@ def zcor(spec, toz, fromz=0.0):
     k = np.power(1./k,3)
     s['flux'] = s['flux'] * k
     if('error' in s.dtype.names):
-        s['flux'] = spec['flux'] * k
+        s['error'] = spec['error'] * k
     return s
