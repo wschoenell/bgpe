@@ -4,7 +4,10 @@ Created on Feb 23, 2012
 @author: william
 '''
 
+import os
 import numpy as np
+import h5py
+import atpy
 
 from bgpe.core.exceptions import ReadFilterException
 
@@ -17,14 +20,34 @@ class readfilterset(object):
     def __init__(self):
         pass
     
-    def read(self, filterfile):  
-        ''' Reads filterfile '''      
-        try:
+    def read(self, filterfile, path=None):  
+        ''' Reads filterfile '''
+        
+        if not os.path.exists(filterfile):
+            raise Exception('File not found: %s' % filterfile)
+    
+        if filterfile.endswith('.hdf5'):
+            db_f = h5py.File(filterfile, 'r')
+            aux_db = db_f.get(path)
+            
+            for filter_id in aux_db.keys():
+                aux_filter = db_f.get('%s/%s' % (path, filter_id))
+                aux_fid = []
+                for i in range(len(aux_filter)):
+                    aux_fid.append(filter_id)
+                aux = atpy.Table()
+                aux.add_column(name = 'ID_filter', data = aux_fid)
+                aux.add_column(name = 'wl', data = aux_filter['wl'])
+                aux.add_column(name = 'transm', data = aux_filter['transm'])
+                if filter_id == aux_db.keys()[0]:
+                    self.filterset = aux.data
+                else:
+                    self.filterset = np.append(self.filterset, aux.data)
+                
+        elif filterfile.endswith('.filter'):
             dt = np.dtype ([('ID_filter', 'S20'), ('wl', 'f'), ('transm', 'f')])
             self.filterset = np.loadtxt(filterfile, dtype=dt)
-        except:
-            raise ReadFilterException('Cannot read filterfile %s' % filterfile)
-        
+              
     def uniform(self, dl=1):
         ''' Interpolates filter curves to match a specific uniform lambda coverage
             Argument:
