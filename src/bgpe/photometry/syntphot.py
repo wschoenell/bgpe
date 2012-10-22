@@ -12,9 +12,10 @@ import bgpe.core.log
 
 
 def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlambda_eff = None):
-    ''' Converts a spectrum on AB magnitude given a filter bandpass.
-        If there are bad pixels on filter interval on a fraction inferior to the badpxl_tolerance, it will
-        interpolate the missing values or, in case of a model_spec != None, it will use the values from model_spec.
+    ''' 
+    Converts a spectrum on AB magnitude given a filter bandpass.
+    If there are bad pixels on filter interval on a fraction inferior to the badpxl_tolerance, it will
+    interpolate the missing values or, in case of a model_spec != None, it will use the values from model_spec.
     
     Keyword arguments:
     filter: Filter transmission curve
@@ -120,8 +121,7 @@ def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlamb
     m_ab = -2.5 * np.log10( np.trapz(obs_cut['flux'] * transm_ * wl_, wl_)  / np.trapz(transm_ / wl_, wl_) ) - 2.41
     
     if('error' in obs_cut.dtype.names):
-        flag = (obs_cut['error'] > 0)
-        e_ab = 1.0857362047581294 * np.sqrt(np.sum(transm_[flag]**2 * obs_cut['error'][flag]**2) * wl_[flag]**2) / np.sum(obs_cut['flux'][flag] * transm_[flag] * wl_[flag])
+        e_ab = 1.0857362047581294 * np.sqrt( np.sum(transm_[good]**2 * obs_cut['error'][good]**2 * wl_[good] ** 2 )) / np.sum(obs_cut['flux'][good] * transm_[good] * wl_[good])
     else:
         e_ab = 0.0
 
