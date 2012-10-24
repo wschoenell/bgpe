@@ -56,6 +56,7 @@ class LogFormatter (logging.Formatter):
             stream.close()
             
 def setConsoleLevel (level):
+    if level == None: level = 0
     consoleHandler.setLevel(level)
             
 #fmt = LogFormatter(fmt='%(asctime)s.%(msecs)d %(levelname)s %(name)s %(filename)s:%(lineno)d %(message)s',
