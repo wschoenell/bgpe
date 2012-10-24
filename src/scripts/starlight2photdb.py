@@ -2,6 +2,9 @@
 Created on Sep 18, 2012
 
 @author: william
+
+    This script converts STARLIGHT-SDSS input + output + table files
+    to a hdf5 template library.  
 '''
 
 import re
@@ -35,7 +38,7 @@ def argparser():
     
     ''' Defines the input and help options of the program... '''
     
-    parser = argparse.ArgumentParser(description='Convert SDSS + Starlight output to a hdf5 db of spectra.')
+    parser = argparse.ArgumentParser(description='Convert STARLIGHT-SDSS input + output + table output to a hdf5 library database.')
     
     parser.add_argument('-i', metavar='inputfilelist.txt', type=str, nargs=1,
                         help='Input file list with 2 columns: SDSS and Starlight files', required=True)    
@@ -49,23 +52,27 @@ def argparser():
     parser.add_argument('-d', metavar='DR?', type=str, nargs=1, help='SDSS Data Release (e.g. DR7)', required=True)
     parser.add_argument('-sa', metavar='sample', type=str, nargs=1, help='SDSS Sample (e.g. 926246)', required=True)
     parser.add_argument('-o', metavar='database.hdf5', type=str, nargs=1, help='Database output file', required=True)
-    parser.add_argument('-f', metavar='curves.filter', type=str, nargs=1, help='Filter transmission curves file', required=True)
-    parser.add_argument('-z_ini', metavar='0.0', type=str, nargs=1, help='Initial redshift', required=True)
-    parser.add_argument('-z_fin', metavar='2.0', type=str, nargs=1, help='Final redshift', required=True)
-    parser.add_argument('-dz', metavar='0.01', type=str, nargs=1, help='Delta redshift', required=True)
-    
+    parser.add_argument('-f', metavar='curves.hdf5', type=str, nargs=1, help='Filter transmission curves file', required=True)
+    parser.add_argument('-z_ini', metavar='0.0', type=float, nargs=1, help='Initial redshift', required=True)
+    parser.add_argument('-z_fin', metavar='2.0', type=float, nargs=1, help='Final redshift', required=True)
+    parser.add_argument('-dz', metavar='0.01', type=float, nargs=1, help='Delta redshift', required=True)
+    parser.add_argument('-v', '-v', action='count')
     parser.add_argument('--version', action='version', version='%s version %s' % (_bgpe_name_, _bgpe_version_))
     
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
-    time_start = time.time()
+    
+    t0 = time.time() # To measure execution times.
+    
+    args = argparser()
+    
+    #logging
     from bgpe.core.log import setConsoleLevel
     setConsoleLevel(logging.DEBUG)
+    
     log = logging.getLogger('bgpe.starlight2photdb')
-
-    args = argparser()
     
     # 0 - Main definitions
     in_dir = args.si[0]
@@ -98,6 +105,7 @@ if __name__ == '__main__':
     
     # 1.3 - SYN0[1-4]
     log.debug('Reading SYN files...')
+    t_start = time.time()
     
     tsyn01 = atpy.Table(syn01_file, type='starlight_syn01', include_names = ('id', 'A_V', 'v0', 'vd', 'SN_w', 'SN_n'))
     tsyn02 = atpy.Table(syn02_file, type='starlight_syn02', include_names = ('id', 'at_flux', 'at_mass', 'aZ_flux', 'aZ_mass', 'am_flux', 'am_mass'))
@@ -122,6 +130,8 @@ if __name__ == '__main__':
         if(key != 'id' and key != 'DL_Mpc' and key != 'Mini_fib'): tb.add_column(key, tsyn04[key])
     
     # 0.1 - Init HDF5 file
+    log.debug('Creating and populating DB file...')
+    
     db = inithdf5(db_file)
         # Tables group
     db.create_group('/tables/')    
@@ -131,27 +141,29 @@ if __name__ == '__main__':
             # CCD groups
         for ccd in db_f.get(filterid).keys():
             db.create_group('/%s/%s/' % (filterid, ccd))
-                # Redshfit groups
-            #for z in np.arange(z_from, z_to, z_step):
-            #    db.create_group('/%s/%s/%s' % (filterid, ccd, re.sub('\.', '_', np.str(z)) ) )
         
     # 2 - Write tables to hdf5 file
+    log.debug('\tTables...')
     db.create_dataset(name = '/tables/properties', data=tb[id_list])
     db.create_dataset(name = '/tables/z', data = np.arange(z_from, z_to, z_step) )
 
     
     # 3 - Photometry
     # 3.1 -
+    log.debug('\tPhotometry...')
     for filterid in db_f.keys():
         for ccd in db_f.get(filterid).keys():
-            f = readfilterset()
-            f.read(filter_file, path='/%s/%s' % (filterid, ccd)) 
-            f.uniform()
+            # Read filtercurves
+            f = readfilterset() # Init filterset object
+            f.read(filter_file, path='/%s/%s' % (filterid, ccd))
             f.calc_filteravgwls()
             
+            # db shape
             Nz = len(np.arange(z_from, z_to, z_step))
             Ngal = len(infiles)
             Nl = len(f.filteravgwls)
+            
+            # Library
             db.create_dataset(name = '/%s/%s/library' % (filterid, ccd), shape = (Nz,Ngal,Nl), dtype = np.dtype([('m_ab', np.float), ('e_ab', np.float)]) )
             db.create_dataset(name = '/%s/%s/filtercurves' % (filterid, ccd),  data = np.array(f.filterset, dtype=([('ID_filter', '|S32'), ('wl', '<f4'), ('transm', '<f4')])))
             aux = np.zeros(shape = len(f.filteravgwls), dtype = ([('ID_filter', '|S32'), ('wl_central', np.float)]))
@@ -160,7 +172,7 @@ if __name__ == '__main__':
             db.create_dataset(name = '/%s/%s/filterset' % (filterid, ccd),  data = aux)
     
     # To convert units to L\odot / M\odot \AA:
-    aux_units = (4 * np.pi * np.power(tsyn04['DL_Mpc'][id_list] * Mpc_cm,2)) / (np.power(tsyn04['Mini_fib'][id_list],10) * L_sun)
+    aux_units = (4 * np.pi * np.power(tsyn04['DL_Mpc'][id_list] * Mpc_cm,2)) / (np.power(10,tsyn04['Mini_fib'][id_list]) * L_sun)
     
     for i_file in range(Ngal):
         # Read starlight output
@@ -177,7 +189,10 @@ if __name__ == '__main__':
         obs_spec['error'] = obs_spec['error'] * 1e-17 * aux_units[i_file]
         
         for ccd in db_f.get(filterid).keys():
-        # For each defined redshift, eval the photometry and store on the database.
+            # Get the filterid filter.
+            f.read(filter_file, path='/%s/%s' % (filterid, ccd))
+            
+            # For each defined redshift, eval the photometry and store on the database.
             db_m = db.get('/%s/%s/%s' % (filterid, ccd, 'library'))
             i_z = 0
             for z in np.arange(z_from, z_to, z_step):
@@ -196,9 +211,7 @@ if __name__ == '__main__':
                 M = zcor(model_spec, z)
                 M['flux'] = M['flux'] * k_cosmo
 
-                x = spec2filterset(f.filterset, O, M, dlambda_eff = 3.0)
-                
-                x['m_ab'] = x['m_ab'] - 2.5 * tsyn04[id_list]['Mini_fib'][i_file] 
+                x = spec2filterset(f.filterset, O, M, dlambda_eff = 3.0) 
                 
                 db_m[i_z, i_file] = x
                 i_z = i_z + 1
