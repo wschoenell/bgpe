@@ -12,31 +12,58 @@ import bgpe.core.log
 
 
 def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlambda_eff = None):
-    ''' 
+    '''
     Converts a spectrum on AB magnitude given a filter bandpass.
+
     If there are bad pixels on filter interval on a fraction inferior to the badpxl_tolerance, it will
     interpolate the missing values or, in case of a model_spec != None, it will use the values from model_spec.
+
+    Parameters
+    ----------
+    filter : dict
+             Filter transmission curve. Dictionary containing the following entries:
+             {'wl': array_like
+                    Wavelength (in Angstroms!).
+             'transm': array_like
+                          Filter transmission response.
+             }
+
+    obs_spec : dict
+               Observed Spectra. Dictionary containing the following entries:
+                 {'wl': array_like,
+                  'flux': array_like, 
+                  'error': array_like, optional,
+                  'flag': array_like, optional,
+                  'model_spec': array_like, optional
+                  }
+
+    model_spec : dict, optional
+                 Model Spectra which could be used when there are missing (due to err or flagged). Dictionary containing the following entries:
+                   {    'wl': array_like
+                              Wavelength (in the same units as filter response curve)
+                        'flux': array_like
+                                Flux on a given wl
+                   }
+
+    badpxl_tolerance : float, default: 0.5
+                       Bad pixel fraction tolerance on the spectral interval of the filter.
+
+    dlambda_eff : float, optional
+                  Spectral effective resolution (in Angstroms!). If None, observed_spectrum will be considered the resolution of obs_spec['wl'] array.
     
-    Keyword arguments:
-    filter: Filter transmission curve
-            Keywords:
-            wl: wavelength (in Angstroms!)
-            transm: filter transmission response 
-    obs_spec: Observed Spectra.
-              Keywords:
-              wl: Wavelength (in Angstroms!)
-              flux: Flux on a given wl
-              error: Flux error. If err < 0, the point will be considered as a problem. (Optional)
-              flag: Bad pixel flag. Pixels are considered bad if flag > 1. (Optional)
-    model_spec: Model Spectra which could be used when there are missing (due to err or flagged). (Optional, default=None)
-                Keywords:
-                wl: Wavelength (in the same units as filter response curve)
-                flux: Flux on a given wl
-    badpxl_tolerance: Bad pixel fraction tolerance on the spectral interval of the filter. (Default: 0.5)
+    Returns
+    -------
+    m_ab : float
+           AB magnitude on given filter
+    e_ab : float 
+           AB magnitude error on given filter
+           
+    See Also
+    --------
     
-    Returns:
-    m_ab: AB magnitude on given filter
-    e_ab: AB magnitude error on given filter
+    Notes
+    -----
+
     '''
     log = logging.getLogger('bgpe.photometry.photoconv')
     #Cut the spectrum on the filterset range. This improves the velocity of the rest of the accounts.
@@ -127,8 +154,62 @@ def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlamb
 
     return m_ab, e_ab
 
-def spec2filterset(filterset, obs_spec, model_spec, badpxl_tolerance = 0.5, dlambda_eff = None):
-    ''' Run spec2filter on a filterset '''
+def spec2filterset(filterset, obs_spec, model_spec = None, badpxl_tolerance = 0.5, dlambda_eff = None):
+    '''
+    Run spec2filter over a filterset
+
+    Parameters
+    ----------
+    filterset : object
+                Filter transmission curves (see: bgpe.io.readfilterset).
+
+    obs_spec : dict
+               Observed Spectra. Dictionary containing the following entries:
+                 {    'wl': array_like
+                            Wavelength. (in Angstroms!)
+                      'flux': array_like 
+                              Flux on a given wl.
+                      'error': array_like, optional
+                               Flux error. If err < 0, the point will be considered as a problem. 
+                      'flag': array_like, optional
+                              Bad pixel flag. Pixels are considered bad if flag > 1.
+                      'model_spec': array_like, optional
+                                    Model Spectra which could be used when there are missing (due to err or flagged). 
+                  }
+                  
+    model_spec : dict, optional
+                 Model Spectra which could be used when there are missing (due to err or flagged). Dictionary containing the following entries:
+                   {    'wl': array_like
+                              Wavelength (in the same units as filter response curve)
+                        'flux': array_like
+                                Flux on a given wl
+                   }
+    badpxl_tolerance : float, default: 0.5
+                       Bad pixel fraction tolerance on the spectral interval of the filter.
+                       
+    dlambda_eff : float, optional
+                  Spectral effective resolution (in Angstroms!). If None, observed_spectrum will be considered the resolution of obs_spec['wl'] array.
+                      
+    Returns
+    -------
+    mags : array_like
+           Filterset magnitudes
+           Dictionary containing the following entries:
+             {
+                'm_ab': array_like
+                        AB magnitude on given filter.
+                'e_ab' : array_like
+                         AB magnitude error on given filter.
+            }
+           
+    See Also
+    --------
+    spec2filter, bgpe.io.readfilterset
+    
+    Notes
+    -----
+
+    '''
     log = logging.getLogger('bgpe.photometry.photoconv')
     filter_ids = np.unique(filterset['ID_filter'])
     mags = np.zeros(len(filter_ids), dtype = np.dtype([('m_ab', '<f8'), ('e_ab', '<f8')]))
@@ -139,23 +220,38 @@ def spec2filterset(filterset, obs_spec, model_spec, badpxl_tolerance = 0.5, dlam
     return mags
 
 class photoconv(object):
-    ''' Spec --> Photo conversion class. ''' 
+    '''
+    Spectrum to Photometry conversion class.
+    ''' 
     
     def __init__(self):
         self.log = logging.getLogger('bgpe.photometry.photoconv') #TODO: This MUST come from the object
 
     def fromStarlight(self, filterset, arq_in, arq_syn, starlight_version='starlightv4', badpxl_tolerance=0.5, dlambda_eff = None):
-        ''' Converts automagically STARLIGHT input and output files into photometric magnitudes
+        '''
+        Converts automagically STARLIGHT input and output files into photometric magnitudes
         
-        Keyword arguments:
-        filterset: Filterset filename (or bgpe.io.readfilterset object)
-        arq_in: Starlight input filename (or atpy.TableSet(type='starlight_input') object)
-        arq_syn: Starlight synthesis filename (or atpy.TableSet(type=starlight_version) object)
-        starlight_version: Starlight synthesis file version (Default: starlightv4)
-        badpxl_tolerance: Bad pixel fraction tolerance on the spectral interval of each filter. (Default: 0.5)
+        Parameters
+        ----------
+        filterset : object
+                    Filter transmission curves (see: bgpe.io.readfilterset).
+        arq_in : string
+                 Starlight input filename (or atpy.TableSet(type='starlight_input') object)
+        arq_syn : string
+                  Starlight synthesis filename (or atpy.TableSet(type=starlight_version) object)
+        starlight_version : string, default = 'starlightv4'
+                            Starlight synthesis file version (Default: starlightv4)
+        badpxl_tolerance : float, default: 0.5
+                           Bad pixel fraction tolerance on the spectral interval of each filter. (Default: 0.5)
         
-        Returns:
+        Returns
+        -------
         m_ab: numpy.ndarray dtype = [('m_ab', '<f8'), ('e_ab', '<f8')]
+        
+        See Also
+        --------
+        fromSDSSfits, bgpe.io.readfilterset
+        
         '''
         
         try: # Try to import pystarlight...
@@ -186,13 +282,24 @@ class photoconv(object):
     def fromSDSSfits(self, filterset, fits, badpxl_tolerance = 0.5):
         ''' Converts automagically SDSS .fits spectrum files into photometric magnitudes
         
-        Keyword arguments:
-        filterset: Filterset filename (or bgpe.io.readfilterset object)
-        fits: SDSS .fits filename (or atpy.basetable.Table object)
-        badpxl_tolerance: Bad pixel fraction tolerance on the spectral interval of each filter. (Default: 0.5)
+        Parameters
+        ----------
+        filterset : string or object
+                    Filterset filename (or bgpe.io.readfilterset object)
+        fits : string or object 
+               SDSS .fits filename (or atpy.basetable.Table object)
+        badpxl_tolerance : float 
+                           Bad pixel fraction tolerance on the spectral interval of each filter. (Default: 0.5)
         
-        Returns:
+        
+        Returns
+        -------
         m_ab: numpy.ndarray dtype = [('m_ab', '<f8'), ('e_ab', '<f8')]
+        
+        See Also
+        --------
+        fromStarlight
+        
         '''
         
         try: # Try to import atpy
