@@ -25,6 +25,8 @@ _bgpe_name_             = "bgpe"
 _bgpe_requires_         = ""
 _bgpe_provides_         = "bgpe-core"
 
+_bgpe_updated_          = '2012-10-31'
+
 _bgpe_description_      = "BGPE - Bayesian Galaxy Properties Estimator (provisional name)"
 _bgpe_long_description_ = "Bayesian Galaxy Properties Estimator"
 _bgpe_author            = "William Schoenell"

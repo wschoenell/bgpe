@@ -41,6 +41,16 @@ class BGPEException(Exception):
         else:
             self.cause = strException(sys.exc_info()[1])
             
+class BGPECLIError(Exception):
+    '''Generic exception to raise and log different fatal errors on CLI programs.'''
+    def __init__(self, msg):
+        super(BGPECLIError).__init__(type(self))
+        self.msg = "ERROR: %s" % msg
+    def __str__(self):
+        return self.msg
+    def __unicode__(self):
+        return self.msg
+            
 class HDF5dbException(BGPEException):
     pass
 
