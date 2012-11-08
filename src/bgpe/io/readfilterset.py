@@ -13,15 +13,32 @@ from bgpe.core.exceptions import ReadFilterException
 
 class readfilterset(object):
     '''
-        This class reads a filterset from file and returns an array "filter"
-        with it.
+    This class reads a filterset from file and returns a "filter" object.
     '''
     
     def __init__(self):
         pass
     
     def read(self, filterfile, path=None):  
-        ''' Reads filterfile '''
+        '''
+        Read filterfile
+        
+        Parameters
+        ----------
+        filterfile : string
+                     Filter filename
+        path : string, optional
+               Path to the filterset in the filterfile (only used to .hdf5 tables)
+        
+        Examples
+        --------
+                   
+        See Also
+        --------
+        
+        Notes
+        -----
+        '''
         
         if not os.path.exists(filterfile):
             raise Exception('File not found: %s' % filterfile)

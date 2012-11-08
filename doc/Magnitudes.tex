@@ -18,6 +18,10 @@
 % \renewcommand{\baselinestretch}{1.5} % Uncomment for 1.5 spacing between lines
 \parindent 0pt           % sets leading space for paragraphs
 
+\usepackage[refpage]{nomencl}
+\renewcommand{\nomname}{List of Notations}
+%\renewcommand*{\pagedeclaration}[1]{\unskip\dotfill\hyperpage{#1}}
+\makenomenclature
 
 % ********************* MY DEFINITIONS *****************************
 \def\ni{\noindent}                                       %No indent%
@@ -36,11 +40,21 @@
 
 \begin{document}
 
+\nomname
+\printnomenclature
+
+\section{Library}
+
+
+
 \section{From spectrum to magnitudes}
 
 \begin{equation}
 m_{AB} = -2.5 \log{ {\int F_\nu T_\nu d\nu}\over{\int T_\nu d\nu} } - 48.6
 \end{equation}
+
+
+\nomenclature{$\alpha$}{Angular Velocities}
 
 \ni but,
 
@@ -116,6 +130,12 @@ One can see that the denominator is N times the weighted (by $T_l$) mean flux.
 The numerator, on the other hand, is $\sqrt{N}$ times the weighted mean RMS
 error, so that in the end the error in magnitude is $\frac{1}{\sqrt{N}}$ times
 the typical relative error $\frac{\sigma_l}{F_l}$.
+
+\section{Fits}
+
+\begin{equation}
+\chi^2 = \sum 
+\end{equation}
 
 
 \end{document}
