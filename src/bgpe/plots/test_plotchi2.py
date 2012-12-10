@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 from matplotlib import pylab
 
 from bgpe.plots.mosaic import get_mosaic
-from bgpe.library.model import library
+from bgpe.io.readlibrary import Library
 
-def plot_chi2(axis, prop, likelihood, x, x_correct):
+def plot_chi2(axis, prop, likelihood, x, x_correct, nbins = 100):
     #plt.clf()
     
     # Posterior #
-    aux_hst1, aux_bins = np.histogram(x,weights=likelihood,bins=100, normed=True)
+    aux_hst1, aux_bins = np.histogram(x,weights=likelihood,bins=nbins, normed=True)
     left = np.array(aux_bins[:-1])
     right = np.array(aux_bins[1:])
     pts1 = left+(right-left)/2
@@ -25,7 +25,7 @@ def plot_chi2(axis, prop, likelihood, x, x_correct):
     axis.plot(pts1,aux_hst1, color='magenta')
     
     # Prior #
-    aux_hst2, aux_bins = np.histogram(x, bins=50, normed=True)
+    aux_hst2, aux_bins = np.histogram(x, bins=nbins, normed=True)
     left = np.array(aux_bins[:-1])
     right = np.array(aux_bins[1:])
     pts2 = left+(right-left)/2
@@ -90,39 +90,40 @@ _dir = '/Users/william/Downloads/databases/'
 f1 = _dir+'database_JPAS51_OB.hdf5'
 f2 = _dir+'database_JPAS51_BA.hdf5'
 
-l1 = library(f1) #obj
-l2 = library(f2) #tmpl
+l1 = Library(f1) #obj
+l2 = Library(f2) #tmpl
 
 l1.get_filtersys('JPAS_51', '1')
 l2.get_filtersys('JPAS_51', '1')
 
-z_obj = 0.03 #FIXME: Insert this as keyword on fitchi2 outputfile
-o_list = get_zslice(l1, z_obj)
 ##
 
 ds_path = '/JPAS_51/1/'
-h5file = _dir+'caca.hdf5'
+h5file = _dir+'chi2_1k_0.01.hdf5'
 #h5file = '../../scripts/testchi2.hdf5'
 
 f = h5py.File(h5file)
 
-chi2_ds = f['/%s/chi2' % ds_path]
-s_ds = f['/%s/s' % ds_path]
-logM = np.divide(s_ds,-2.5)
-n_ds = f['/%s/n' % ds_path]
 
-f_L = 10000.
+o_list = get_zslice(l1, f.attrs.get('z'))
+
+chi2_ds = f['/%s/chi2' % ds_path][0:100]
+s_ds = f['/%s/s' % ds_path][0:100]
+logM = np.divide(s_ds,-2.5)
+n_ds = f['/%s/n' % ds_path][0:100]
+
+f_L = 5.
 
 #t_prob = np.exp( - f_L * 1000 * np.sum( np.divide(chi2_ds, n_ds) , axis = 1) / 2 )
 #z_prob = np.exp( - f_L  * 1000 * np.sum( np.divide(chi2_ds, n_ds) , axis = 2) / 2 )
-#img_prob = np.exp( - 1000 * f_L * np.divide(chi2_ds, n_ds) / 2 )
+#likelihood = np.exp( - 1000 * f_L * np.divide(chi2_ds, n_ds) / 2 )
 
-img_prob = np.exp( - f_L * chi2_ds.value / 2 )
+likelihood = np.exp( - f_L * np.divide(chi2_ds, np.subtract(n_ds, 2) ) / 2 )
 #t_prob = np.exp( - f_L * np.sum( chi2_ds.value , axis = 1) / 2 )
 #z_prob = np.exp( - f_L * np.sum( chi2_ds.value , axis = 2) / 2 )
 
-t_prob = np.sum(img_prob, axis = 1)
-z_prob = np.sum(img_prob, axis = 2)
+t_prob = np.sum(likelihood, axis = 1)
+z_prob = np.sum(likelihood, axis = 2)
 
 #t_prob = np.exp( - np.sum( chi2_ds , axis = 1) / 2 )
 #z_prob = np.exp( - np.sum( chi2_ds , axis = 2) / 2 )
@@ -135,26 +136,29 @@ for i_obj in range(len(t_prob)):
     fig = get_mosaic(3,2,row_sep = .03, i_fig = 1)
     
     ##### Redshift #####
-    plot_chi2(fig.axes[0], 'z', z_prob[i_obj], l2.z, 0.05)
+    plot_chi2(fig.axes[0], 'z', z_prob[i_obj], l2.z, f.attrs.get('z')   , nbins = 45)
     ##### MASS #####
-    logMa =  (np.sum(s_ds[i_obj] * img_prob[i_obj]) / np.sum(img_prob[i_obj])) / -2.5
+    logMa =  (np.sum(s_ds[i_obj] * likelihood[i_obj]) / np.sum(likelihood[i_obj])) / -2.5
     print 'logM> %s' % logMa
-    plot_chi2(fig.axes[1], 'Mass', img_prob[i_obj], logM[i_obj], l1.properties['Mcor_fib'][i_obj])
-    print logM[i_obj][img_prob[i_obj] == img_prob[i_obj].min()][0]
+    plot_chi2(fig.axes[1], 'Mass', likelihood[i_obj], logM[i_obj], l1.properties['Mcor_fib'][i_obj])
+    print logM[i_obj][likelihood[i_obj] == likelihood[i_obj].min()][0]
     #plot_chi2(fig.axes[1], 'Mass', t_prob[i_obj], np.sum(logM[i_obj], axis=0)/logM.shape[0], 10)
     
     for i_plot in np.array(range(len(plots)))+2:
         prop = plots[i_plot-2]
         mask = np.bitwise_and(l2.properties[prop] > -998., l2.properties[prop] < 200.)
-        plot_chi2(fig.axes[i_plot], prop, t_prob[i_obj][mask], l2.properties[prop][mask], l1.properties[prop][i_obj])
-        print p999(l2.properties[prop], t_prob[i_obj])
+        if prop.split('_')[0] == 'EW':
+            plot_chi2(fig.axes[i_plot], prop, t_prob[i_obj][mask], np.log10(l2.properties[prop][mask]), np.log10(l1.properties[prop][i_obj]))
+        else:
+            plot_chi2(fig.axes[i_plot], prop, t_prob[i_obj][mask], l2.properties[prop][mask], l1.properties[prop][i_obj])
+            print p999(l2.properties[prop], t_prob[i_obj])
     
     ####### Spec Plot #######
     if raw_input('Want spec plot sir?') == 'y':
         N_z = l2.library.shape[0]
         N_t = l2.library.shape[1]
         
-        a = img_prob[i_obj]
+        a = likelihood[i_obj]
         b = l2.library.value['m_ab'].copy()
         
         for i_z in range(N_z):

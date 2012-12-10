@@ -2,6 +2,11 @@
 API
 ***
  
+:mod:`bgpe.photometry.syntphot`
+========================
+
+.. currentmodule:: bgpe.fit.stats
+.. autofunction:: chi2
 
 :mod:`bgpe.photometry.syntphot`
 ========================

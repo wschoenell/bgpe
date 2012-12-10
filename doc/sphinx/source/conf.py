@@ -248,3 +248,5 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
+
+mathjax_path = 'http://cdn.mathjax.org/mathjax/1.1-latest/MathJax.js?config=default'

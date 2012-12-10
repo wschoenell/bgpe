@@ -1,7 +1,7 @@
 #!/usr/local/bin/python2.7
 # encoding: utf-8
 '''
-scripts.chi2fit -- Fits chi2 over a library
+scripts.chi2fit -- Fits chi2 over a Library
 
 @author:     william
         
@@ -22,17 +22,19 @@ from bgpe.core.exceptions import BGPECLIError
 import h5py
 import numpy as np
 
-from bgpe.library.model import library
+from bgpe.io.readlibrary import Library
 from bgpe.fit.stats import chi2
 
 from multiprocessing import Process
+from multiprocessing import Queue
 
 DEBUG = 0
 TESTRUN = 0
 PROFILE = 0
 
 def get_zslice(l, z):
-    return np.copy(l.library[np.argwhere(l.z == z),:])
+    i_z = np.argmin((l.z - z)**2) # Due to precision problems!
+    return np.copy(l.Library[i_z,:])
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -70,7 +72,7 @@ USAGE
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         
         parser.add_argument("-i", "--inputfile", dest="input", help="Input filename ", required=True)
-        parser.add_argument("-l", "--library", dest="library", help="Template library filename ", required=True)
+        parser.add_argument("-l", "--Library", dest="Library", help="Template Library filename ", required=True)
         parser.add_argument("-f", "--filtersystem", dest="filtersystem", help="Filtersystem ", required=True)
         parser.add_argument("-c", "--ccd", dest="ccd", help="CCD ", required=True)
         
@@ -109,8 +111,8 @@ USAGE
     
 
     
-    inp = library(args.input)
-    lib = library(args.library)
+    inp = Library(args.input)
+    lib = Library(args.Library)
     
     inp.get_filtersys(args.filtersystem, args.ccd) # obj
     lib.get_filtersys(args.filtersystem, args.ccd) # libra
@@ -130,12 +132,12 @@ USAGE
     # Define some auxiliar data...
     f.attrs.create('z', args.obj_z)
     f.attrs.create('ifile', args.input)
-    f.attrs.create('lib', args.library)
-    f.attrs.create('lib', args.library)
+    f.attrs.create('lib', args.Library)
+    f.attrs.create('lib', args.Library)
     f.attrs.create('version', '%s - %s' % (program_name, program_version))
     ### 
     
-    aux_shape = (N_obj, lib.library.shape[0],lib.library.shape[1])
+    aux_shape = (N_obj, lib.Library.shape[0],lib.Library.shape[1])
     n_ds = f.create_dataset( '%s/n' % (lib.path), shape = aux_shape, dtype = np.int)
     s_ds = f.create_dataset( '%s/s' % (lib.path), shape = aux_shape)
     chi2_ds = f.create_dataset( '%s/chi2' % (lib.path), aux_shape)
@@ -143,13 +145,30 @@ USAGE
     if not args.nt:
         calc_chi2(N_obj, o_list, inp, lib, n_ds, s_ds, chi2_ds, args)
     else:
+        n_ds_mem = np.zeros(aux_shape)
+        s_ds_mem = np.zeros(aux_shape)
+        chi2_ds_mem = np.zeros(aux_shape)
+        
         p = []
+        q = []
         i_obj = np.array(np.linspace(0, N_obj, args.nt+1), dtype = np.int)
         for i_t in range(len(i_obj)-1):
             print (i_obj[i_t], i_obj[i_t+1]-1)
-            p.append(Process(target = calc_chi2, args = ((i_obj[i_t], i_obj[i_t+1]), o_list, inp, lib, n_ds, s_ds, chi2_ds, args) ))
+            q.append(Queue())
+            p.append(Process(target = calc_chi2, args = ((i_obj[i_t], i_obj[i_t+1]), o_list, inp, lib, n_ds_mem, s_ds_mem, chi2_ds_mem, args, q[-1])))
             p[-1].start()
+        
+        for i_t, queue in enumerate(q): 
+            result = queue.get()
+            n_ds[i_obj[i_t]:i_obj[i_t+1],] = result[0]
+            s_ds[i_obj[i_t]:i_obj[i_t+1],] = result[1]
+            chi2_ds[i_obj[i_t]:i_obj[i_t+1],] = result[2]
             
+        for process in p: process.join()
+        
+        
+        
+        print 'ok.'
             
         
             
@@ -158,7 +177,7 @@ USAGE
     
     f.close()
 
-def calc_chi2(i_objs, o_list, inp, lib, n_ds, s_ds, chi2_ds, args):
+def calc_chi2(i_objs, o_list, inp, lib, n_ds, s_ds, chi2_ds, args, result_queue = False):
     
     if type(i_objs) == tuple:
         i_ini = i_objs[0]
@@ -167,6 +186,12 @@ def calc_chi2(i_objs, o_list, inp, lib, n_ds, s_ds, chi2_ds, args):
         i_ini = 0
         i_fin = i_objs
     
+    N_z, N_tpl = lib.Library.shape[:2]
+    
+    n_tmp = np.zeros_like(n_ds)
+    s_tmp = np.zeros_like(s_ds)
+    chi2_tmp = np.zeros_like(chi2_ds)
+    
     for i_obj in range(i_ini, i_fin):
         obj = o_list[i_obj]
         log_mass = inp.properties[i_obj]['Mcor_fib']
@@ -174,15 +199,25 @@ def calc_chi2(i_objs, o_list, inp, lib, n_ds, s_ds, chi2_ds, args):
         obj['m_ab'] = -2.5 * log_mass + obj['m_ab']
         obj_err2 = np.power(obj['e_ab'], 2)
         
-        N_z, N_tpl = lib.library.shape[:2]
-        
         for i_z in range(N_z):
             a = get_zslice(lib, lib.z[i_z])
             for i_tpl in range(N_tpl):
-                w = 1 / (obj_err2 + np.power(a[i_tpl]['e_ab'], 2))
-                n_ds[i_obj,i_z,i_tpl], s_ds[i_obj,i_z,i_tpl], chi2_ds[i_obj,i_z,i_tpl] = chi2(obj['m_ab'], a[i_tpl]['m_ab'], w)
+                w = 1 / (obj_err2 + 0.01 + np.power(a[i_tpl]['e_ab'], 2))
+                #print obj_err2
+                #print chi2(obj['m_ab'], a[i_tpl]['m_ab'], w)
+                n_tmp[i_obj,i_z,i_tpl], s_tmp[i_obj,i_z,i_tpl], chi2_tmp[i_obj,i_z,i_tpl] = chi2(obj['m_ab'], a[i_tpl]['m_ab'], w)
                 if i_z % 5 == 0 and i_tpl == 0 and args.verbose > 0:
                     print 'DEBUG: I\'m at i_obj, i_z --> %s, %s' % (i_obj, i_z)
+        
+    n_ds.write_direct(n_tmp)
+    s_ds.write_direct(s_tmp)
+    chi2_ds.write_direct(chi2_tmp)
+    
+        
+    if result_queue: result_queue.put((n_ds[i_ini:i_fin,], s_ds[i_ini:i_fin,], chi2_ds[i_ini:i_fin,]))
+    
+    print 'Finished calc_chi2 of %s.' % np.str(i_objs)    
+    return
 
 if __name__ == "__main__":
     if DEBUG:
