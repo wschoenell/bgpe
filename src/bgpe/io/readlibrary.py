@@ -8,9 +8,9 @@ import h5py
 
 from bgpe.core.exceptions import BGPEException
 
-class library(object):
+class Library(object):
     '''
-    Reads a .hdf5 template library. 
+    Reads a .hdf5 template Library. 
     '''
 
     def __init__(self, library_file):
