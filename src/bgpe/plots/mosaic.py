@@ -72,7 +72,6 @@ def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .
     
     '''
 
-    nullfmt   = NullFormatter()
     figure = plt.figure(i_fig, figsize=figsize)
     figure.clf()
     
@@ -105,10 +104,9 @@ def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .
             
             axis = figure.add_axes([left, bottom, width, height], sharex=sharex, sharey=sharey)
             
-            if(x_shareaxis == True and i_row < n_rows): axis.xaxis.set_major_formatter(nullfmt)
-            if(y_shareaxis == True and i_col < 1): axis.yaxis.set_major_formatter(nullfmt)
+            if(x_shareaxis == True and i_row < n_rows): axis.xaxis.set_visible(False)
+            if(y_shareaxis == True and i_col > 1): axis.yaxis.set_visible(False)
             
             print 'axis = figure.add_axes([',left,', ',bottom,', ',width,', ',height,'])'
-            #print np.shape(figure.axes)
             
     return figure
