@@ -5,7 +5,6 @@ Created on Oct 24, 2012
 '''
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import NullFormatter
 
 
 def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .1, margin_right = .1, col_sep = .0, row_sep = .0, x_shareaxis = False, y_shareaxis = False, i_fig = None, figsize=None, use_grid=False):
