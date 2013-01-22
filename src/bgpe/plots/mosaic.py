@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
 
 
-def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .1, margin_right = .1, col_sep = .0, row_sep = .0, x_shareaxis = False, y_shareaxis = False, i_fig = None, figsize=None):
+def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .1, margin_right = .1, col_sep = .0, row_sep = .0, x_shareaxis = False, y_shareaxis = False, i_fig = None, figsize=None, use_grid=False):
     '''
     Returns a matplotlib.figure with a mosaic of n_rows x n_cols boxes.
     
@@ -49,6 +49,9 @@ def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .
     
     figsize : array, shape (width, height)
               Width x height in inches; defaults to rc figure.figsize.
+              
+    use_grid : bool
+               Set it to true if you will need to use ax.grid(). Default: False
               
     Returns
     -------
@@ -104,8 +107,17 @@ def get_mosaic(n_rows, n_cols, margin_low = .1, margin_upp = .1, margin_left = .
             
             axis = figure.add_axes([left, bottom, width, height], sharex=sharex, sharey=sharey)
             
-            if(x_shareaxis == True and i_row < n_rows): axis.xaxis.set_visible(False)
-            if(y_shareaxis == True and i_col > 1): axis.yaxis.set_visible(False)
+            if(x_shareaxis == True and i_row < n_rows):
+                if(use_grid):
+                    axis.xaxis.set_ticklabels([])
+                else:
+                    axis.xaxis.set_visible(False)
+            if(y_shareaxis == True and i_col > 1):
+                if(use_grid):
+                    axis.yaxis.set_ticklabels([])                    
+                else:
+                    axis.yaxis.set_visible(False)
+
             
             print 'axis = figure.add_axes([',left,', ',bottom,', ',width,', ',height,'])'
             
