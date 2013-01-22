@@ -59,7 +59,7 @@ class readfilterset(object):
                 if filter_id == aux_db.keys()[0]:
                     self.filterset = aux.data
                 else:
-                    self.filterset = np.append(self.filterset, aux.data)
+                    self.filterset = np.append(self.filterset, np.array(aux.data, dtype=self.filterset.dtype))
                 
         elif filterfile.endswith('.filter'):
             dt = np.dtype ([('ID_filter', 'S20'), ('wl', 'f'), ('transm', 'f')])
