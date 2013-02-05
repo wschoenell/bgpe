@@ -11,7 +11,7 @@ import logging
 import bgpe.core.log
 
 
-def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlambda_eff = None):
+def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5):
     '''
     Converts a spectrum on AB magnitude given a filter bandpass.
 
@@ -47,9 +47,6 @@ def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlamb
 
     badpxl_tolerance : float, default: 0.5
                        Bad pixel fraction tolerance on the spectral interval of the filter.
-
-    dlambda_eff : float, optional
-                  Spectral effective resolution (in Angstroms!). If None, observed_spectrum will be considered the resolution of obs_spec['wl'] array.
     
     Returns
     -------
@@ -89,12 +86,6 @@ def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlamb
     else:
         wl_ = filter['wl']
         transm_ = filter['transm']
-
-    # If we don't know the effective resolution, we assume that is the average difference between lambdas
-    if(dlambda_eff == None):
-        dlambda_eff = np.average(wl_[1:] - wl_[:-1])
-        log.warning('dlambda_eff not defined, using %3.2f', dlambda_eff)
-    log.debug('dlambda_eff = %3.2f', dlambda_eff)
 
     
     #Check for bad pixels. Good pixels should be signaled with flag(lambda) = 0 or 1.
@@ -154,7 +145,7 @@ def spec2filter(filter, obs_spec, model_spec=None, badpxl_tolerance = 0.5, dlamb
 
     return m_ab, e_ab
 
-def spec2filterset(filterset, obs_spec, model_spec = None, badpxl_tolerance = 0.5, dlambda_eff = None):
+def spec2filterset(filterset, obs_spec, model_spec = None, badpxl_tolerance = 0.5):
     '''
     Run spec2filter over a filterset
 
@@ -186,9 +177,6 @@ def spec2filterset(filterset, obs_spec, model_spec = None, badpxl_tolerance = 0.
                    }
     badpxl_tolerance : float, default: 0.5
                        Bad pixel fraction tolerance on the spectral interval of the filter.
-                       
-    dlambda_eff : float, optional
-                  Spectral effective resolution (in Angstroms!). If None, observed_spectrum will be considered the resolution of obs_spec['wl'] array.
                       
     Returns
     -------
@@ -215,7 +203,7 @@ def spec2filterset(filterset, obs_spec, model_spec = None, badpxl_tolerance = 0.
     mags = np.zeros(len(filter_ids), dtype = np.dtype([('m_ab', '<f8'), ('e_ab', '<f8')]))
     for i_filter in range(len(filter_ids)):
         filter = filterset[filterset['ID_filter'] == filter_ids[i_filter]]
-        mags[i_filter]['m_ab'], mags[i_filter]['e_ab'] = spec2filter(filter, obs_spec, model_spec, badpxl_tolerance = badpxl_tolerance, dlambda_eff = dlambda_eff)
+        mags[i_filter]['m_ab'], mags[i_filter]['e_ab'] = spec2filter(filter, obs_spec, model_spec, badpxl_tolerance = badpxl_tolerance)
         log.debug('Magnitude to filter %s: %3.2f, error: %3.2f' % (filter_ids[i_filter], mags[i_filter]['m_ab'], mags[i_filter]['e_ab']) )
     return mags
 
@@ -227,7 +215,7 @@ class photoconv(object):
     def __init__(self):
         self.log = logging.getLogger('bgpe.photometry.photoconv') #TODO: This MUST come from the object
 
-    def fromStarlight(self, filterset, arq_in, arq_syn, starlight_version='starlightv4', badpxl_tolerance=0.5, dlambda_eff = None):
+    def fromStarlight(self, filterset, arq_in, arq_syn, starlight_version='starlightv4', badpxl_tolerance=0.5):
         '''
         Converts automagically STARLIGHT input and output files into photometric magnitudes
         
@@ -277,7 +265,7 @@ class photoconv(object):
         model_spec['flux'] = model_spec['flux'] * arq_syn.keywords['fobs_norm'] * 1e-17
         
         
-        return spec2filterset(filterset, obs_spec, model_spec, badpxl_tolerance = badpxl_tolerance, dlambda_eff = dlambda_eff)
+        return spec2filterset(filterset, obs_spec, model_spec, badpxl_tolerance = badpxl_tolerance)
 
     def fromSDSSfits(self, filterset, fits, badpxl_tolerance = 0.5):
         ''' Converts automagically SDSS .fits spectrum files into photometric magnitudes
@@ -322,4 +310,4 @@ class photoconv(object):
         self.obs_spec['error'] = self.obs_spec['error'] * 1e-17
         self.model_spec['flux'] = self.model_spec['flux'] * 1e-17
         
-        return spec2filterset(filterset, self.obs_spec, self.model_spec, badpxl_tolerance, dlambda_eff = 3.0)
+        return spec2filterset(filterset, self.obs_spec, self.model_spec, badpxl_tolerance)
