@@ -27,6 +27,7 @@ from bgpe.fit.stats import chi2
 
 from multiprocessing import Process
 from multiprocessing import Queue
+from bgpe.io.readinput import Input
 
 DEBUG = 0
 TESTRUN = 0
@@ -34,7 +35,7 @@ PROFILE = 0
 
 def get_zslice(l, z):
     i_z = np.argmin((l.z - z)**2) # Due to precision problems!
-    return np.copy(l.Library[i_z,:])
+    return np.copy(l.library[i_z,:])
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -72,19 +73,22 @@ USAGE
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         
         parser.add_argument("-i", "--inputfile", dest="input", help="Input filename ", required=True)
-        parser.add_argument("-l", "--Library", dest="Library", help="Template Library filename ", required=True)
+        parser.add_argument("-l", "--library", dest="Library", help="Template Library filename ", required=True)
         parser.add_argument("-f", "--filtersystem", dest="filtersystem", help="Filtersystem ", required=True)
         parser.add_argument("-c", "--ccd", dest="ccd", help="CCD ", required=True)
         
         parser.add_argument("-o", "--outputfile", dest="output", help="Output filename ", required=True)
         
-        parser.add_argument("-z", "--obj_z", dest="obj_z", type=float, help="Redshift to get on the object libfile", required=True)
+#        parser.add_argument("-z", "--obj_z", dest="obj_z", type=float, help="Redshift to get on the object libfile", required=True)
         
         parser.add_argument("-N", "--Ngals_max", dest="Nmax", type=int, help="Max number of input galaxies to run over")
         
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         
         parser.add_argument("-t", "--threads", dest="nt", type=int, default=0, help="set number of threads [default: %(default)s]")
+        
+        parser.add_argument("-nz", "--no_z", dest="nz", action="store_true", default=False, help="set number of threads [default: %(default)s]")
+        
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         
         # Process arguments
@@ -111,14 +115,15 @@ USAGE
     
 
     
-    inp = Library(args.input)
+#    inp = Library(args.input)
+    inp = Input(args.input)
     lib = Library(args.Library)
     
     inp.get_filtersys(args.filtersystem, args.ccd) # obj
     lib.get_filtersys(args.filtersystem, args.ccd) # libra
     
     
-    o_list = get_zslice(inp, args.obj_z)
+    o_list = inp.data
     if args.Nmax != None:
         o_list = o_list[:np.int(args.Nmax)]
     
@@ -130,14 +135,17 @@ USAGE
         raise BGPECLIError('File %s already exists.' % args.output)
     
     # Define some auxiliar data...
-    f.attrs.create('z', args.obj_z)
     f.attrs.create('ifile', args.input)
     f.attrs.create('lib', args.Library)
     f.attrs.create('lib', args.Library)
     f.attrs.create('version', '%s - %s' % (program_name, program_version))
     ### 
     
-    aux_shape = (N_obj, lib.Library.shape[0],lib.Library.shape[1])
+    if(args.nz):
+        aux_shape = (N_obj, 1, lib.library.shape[1])
+    else:
+        aux_shape = (N_obj, lib.library.shape[0], lib.library.shape[1])
+        
     n_ds = f.create_dataset( '%s/n' % (lib.path), shape = aux_shape, dtype = np.int)
     s_ds = f.create_dataset( '%s/s' % (lib.path), shape = aux_shape)
     chi2_ds = f.create_dataset( '%s/chi2' % (lib.path), aux_shape)
@@ -186,7 +194,12 @@ def calc_chi2(i_objs, o_list, inp, lib, n_ds, s_ds, chi2_ds, args, result_queue 
         i_ini = 0
         i_fin = i_objs
     
-    N_z, N_tpl = lib.Library.shape[:2]
+    if args.nz:
+        N_z, N_tpl = (1, lib.library.shape[1])
+        lib_z = inp.properties['z']
+    else:
+        N_z, N_tpl = lib.library.shape[:2]
+        lib_z = lib.z
     
     n_tmp = np.zeros_like(n_ds)
     s_tmp = np.zeros_like(s_ds)
@@ -194,15 +207,20 @@ def calc_chi2(i_objs, o_list, inp, lib, n_ds, s_ds, chi2_ds, args, result_queue 
     
     for i_obj in range(i_ini, i_fin):
         obj = o_list[i_obj]
-        log_mass = inp.properties[i_obj]['Mcor_fib']
+#        log_mass = inp.properties[i_obj]['Mcor_fib']
         # To a galaxy with 10^10 M\odot:
-        obj['m_ab'] = -2.5 * log_mass + obj['m_ab']
+#        obj['m_ab'] = -2.5 * log_mass + obj['m_ab']
         obj_err2 = np.power(obj['e_ab'], 2)
         
         for i_z in range(N_z):
-            a = get_zslice(lib, lib.z[i_z])
+            if args.nz:
+                a = get_zslice(lib, lib_z[i_obj])
+                print 'redshift @@@>', lib_z[i_obj], np.argmin((lib.z - lib_z[i_obj])**2), lib.z[np.argmin((lib.z - lib_z[i_obj])**2)]
+            else:
+                a = get_zslice(lib, lib_z[i_z])
             for i_tpl in range(N_tpl):
-                w = 1 / (obj_err2 + 0.01 + np.power(a[i_tpl]['e_ab'], 2))
+                #w = 1 / (obj_err2 + 0.01 + np.power(a[i_tpl]['e_ab'], 2))
+                w = 1 / (obj_err2 + 0.01)**2 #FIXME:
                 #print obj_err2
                 #print chi2(obj['m_ab'], a[i_tpl]['m_ab'], w)
                 n_tmp[i_obj,i_z,i_tpl], s_tmp[i_obj,i_z,i_tpl], chi2_tmp[i_obj,i_z,i_tpl] = chi2(obj['m_ab'], a[i_tpl]['m_ab'], w)
