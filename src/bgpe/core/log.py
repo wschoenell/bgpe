@@ -65,7 +65,7 @@ fmt = LogFormatter(fmt='%(levelname)s -- %(name)s: %(message)s',
                        datefmt='%d-%m-%Y %H:%M:%S')
 
 root = logging.getLogger("bgpe")
-root.setLevel(logging.DEBUG)
+root.setLevel(logging.WARNING)
 root.propagate = False
 
 consoleHandler = logging.StreamHandler(sys.stderr)

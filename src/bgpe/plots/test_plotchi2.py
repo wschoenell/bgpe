@@ -85,6 +85,8 @@ def rcLatex():
 def get_zslice(l, z):
     return l.library[np.argwhere(l.z == z),:]
 
+filtersys = 'JPAS_51'
+ccd = '1'
 ## Library
 _dir = '/Users/william/Downloads/databases/'
 f1 = _dir+'database_JPAS51_OB.hdf5'
@@ -93,12 +95,12 @@ f2 = _dir+'database_JPAS51_BA.hdf5'
 l1 = Library(f1) #obj
 l2 = Library(f2) #tmpl
 
-l1.get_filtersys('JPAS_51', '1')
-l2.get_filtersys('JPAS_51', '1')
+l1.get_filtersys(filtersys, ccd)
+l2.get_filtersys(filtersys, ccd)
 
 ##
 
-ds_path = '/JPAS_51/1/'
+ds_path = '/%s/%s/' % (filtersys, ccd)
 h5file = _dir+'chi2_1k_0.01.hdf5'
 #h5file = '../../scripts/testchi2.hdf5'
 

@@ -3,6 +3,7 @@
 	<name>bgpe</name>
 	<comment></comment>
 	<projects>
+		<project>pystarlight</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
